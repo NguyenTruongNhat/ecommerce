@@ -1,11 +1,16 @@
+using Ecommerce.Application.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddConfigureMediatR();
 
-builder.Services.AddControllers();
+builder
+    .Services
+    .AddControllers()
+    .AddApplicationPart(Ecommerce.Presentation.AssemblyReference.Assembly);
 
 // Configure Options and SQL
 builder.Services.ConfigureSqlServerRetryOptions(builder.Configuration.GetSection(nameof(SqlServerRetryOptions)));
