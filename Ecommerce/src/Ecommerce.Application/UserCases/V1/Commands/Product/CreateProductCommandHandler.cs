@@ -30,7 +30,7 @@ public sealed class CreateProductCommandHandler : ICommandHandler<Command.Create
 
     public async Task<Result> Handle(Command.CreateProductCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogError($"CreateProductCommand::: {DateTime.Now.ToString()}");
+        _logger.LogInformation($"CreateProductCommand::: {DateTime.Now.ToString()}");
         var product = Domain.Entities.Product.CreateProduct(Guid.NewGuid(), request.Name, request.Price, request.Description);
 
         _productRepository.Add(product);

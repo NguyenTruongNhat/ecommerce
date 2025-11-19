@@ -7,15 +7,15 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Log.Logger = new LoggerConfiguration().ReadFrom
-    .Configuration(builder.Configuration)
+var configuration = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json")
+        .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
+        .Build();
+
+var logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(configuration)
     .CreateLogger();
-
-builder.Logging
-    .ClearProviders()
-    .AddSerilog();
-
-builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddConfigureMediatR();
@@ -57,5 +57,4 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();
