@@ -1,10 +1,11 @@
-﻿using MediatR;
-using Ecommerce.Contract.Abstractions.Message;
+﻿using Ecommerce.Contract.Abstractions.Message;
 using Ecommerce.Contract.Abstractions.Shared;
 using Ecommerce.Contract.Services.V1.Product;
 using Ecommerce.Domain.Abstractions;
 using Ecommerce.Domain.Abstractions.Repositories;
 using Ecommerce.Persistence;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Ecommerce.Application.UserCases.V1.Commands.Product;
 public sealed class CreateProductCommandHandler : ICommandHandler<Command.CreateProductCommand>
@@ -13,20 +14,23 @@ public sealed class CreateProductCommandHandler : ICommandHandler<Command.Create
     private readonly IUnitOfWork _unitOfWork; // SQL-SERVER-STRATEGY-2
     private readonly ApplicationDbContext _context; // SQL-SERVER-STRATEGY-1
     private readonly IPublisher _publisher;
+    private readonly ILogger<CreateProductCommandHandler> _logger;
 
     public CreateProductCommandHandler(IRepositoryBase<Domain.Entities.Product, Guid> productRepository,
         IUnitOfWork unitOfWork,
         IPublisher publisher,
-        ApplicationDbContext context)
+        ApplicationDbContext context, ILogger<CreateProductCommandHandler> logger)
     {
         _productRepository = productRepository;
         _unitOfWork = unitOfWork;
         _context = context;
         _publisher = publisher;
+        _logger = logger;
     }
 
     public async Task<Result> Handle(Command.CreateProductCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogError($"CreateProductCommand::: {DateTime.Now.ToString()}");
         var product = Domain.Entities.Product.CreateProduct(Guid.NewGuid(), request.Name, request.Price, request.Description);
 
         _productRepository.Add(product);

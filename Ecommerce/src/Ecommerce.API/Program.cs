@@ -1,8 +1,19 @@
 using Ecommerce.Application.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Options;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration().ReadFrom
+    .Configuration(builder.Configuration)
+    .CreateLogger();
+
+builder.Logging
+    .ClearProviders()
+    .AddSerilog();
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddConfigureMediatR();
