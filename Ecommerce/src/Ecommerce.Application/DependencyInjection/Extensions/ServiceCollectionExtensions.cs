@@ -1,7 +1,8 @@
-﻿using Ecommerce.Application.Behaviors;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Ecommerce.Application.Behaviors;
+using Ecommerce.Application.Mapper;
 
 namespace Ecommerce.Application.DependencyInjection.Extensions;
 public static class ServiceCollectionExtensions
@@ -16,7 +17,12 @@ public static class ServiceCollectionExtensions
         //.AddTransient(typeof(IPipelineBehavior<,>), typeof(TracingPipelineBehavior<,>))
         .AddValidatorsFromAssembly(Contract.AssemblyReference.Assembly, includeInternalTypes: true);
 
-    //public static IServiceCollection AddConfigureAutoMapper(this IServiceCollection services)
-    //    => services.AddAutoMapper(typeof(ServiceProfile));
+    public static IServiceCollection AddConfigureAutoMapper(this IServiceCollection services)
+    {
+        return services.AddAutoMapper(cfg =>
+        {
+            cfg.AddProfile<ServiceProfile>();
+        });
+    }
 
 }

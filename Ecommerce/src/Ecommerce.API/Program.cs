@@ -1,6 +1,8 @@
+using Ecommerce.API.DependencyInjection.Extensions;
 using Ecommerce.Application.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Options;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,16 +31,26 @@ builder.Services.AddSqlConfiguration();
 
 builder.Services.AddRepositoryBaseConfiguration();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddConfigureAutoMapper();
+
+builder.Services
+        .AddSwaggerGenNewtonsoftSupport()
+        .AddFluentValidationRulesToSwagger()
+        .AddEndpointsApiExplorer()
+        .AddSwagger();
+
+builder.Services
+    .AddApiVersioning(options => options.ReportApiVersions = true)
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'VVV";
+        options.SubstituteApiVersionInUrl = true;
+    });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+if (builder.Environment.IsDevelopment() || builder.Environment.IsStaging())
+    app.ConfigureSwagger();
 
 app.UseHttpsRedirection();
 

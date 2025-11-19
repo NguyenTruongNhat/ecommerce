@@ -5,8 +5,7 @@ using Ecommerce.Contract.Abstractions.Shared;
 
 namespace Ecommerce.Presentation.Abstractions;
 [ApiController]
-[Route("api/[controller]")]
-//[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
 
 public abstract class ApiController : ControllerBase
 {
