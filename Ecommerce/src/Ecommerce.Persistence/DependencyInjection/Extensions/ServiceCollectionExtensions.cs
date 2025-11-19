@@ -1,6 +1,9 @@
-﻿using Ecommerce.Domain.Entities.Identity;
+﻿using Ecommerce.Domain.Abstractions;
+using Ecommerce.Domain.Abstractions.Repositories;
+using Ecommerce.Domain.Entities.Identity;
 using Ecommerce.Persistence;
 using Ecommerce.Persistence.DependencyInjection.Options;
+using Ecommerce.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -77,4 +80,11 @@ public static class ServiceCollectionExtensions
         .Bind(section)
         .ValidateDataAnnotations()
         .ValidateOnStart();
+
+    public static void AddRepositoryBaseConfiguration(this IServiceCollection services)
+    {
+        services.AddTransient(typeof(IUnitOfWork), typeof(EFUnitOfWork));
+        services.AddTransient(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>));
+
+    }
 }
