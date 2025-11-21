@@ -46,4 +46,33 @@ public class ProductsController : ApiController
             pageSize));
         return Ok(result);
     }
+
+    [HttpGet("{productId}")]
+    [ProducesResponseType(typeof(Result<Response.ProductResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Products(Guid productId)
+    {
+        var result = await Sender.Send(new Query.GetProductByIdQuery(productId));
+        return Ok(result);
+    }
+
+    [HttpDelete("{productId}")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteProducts(Guid productId)
+    {
+        var result = await Sender.Send(new Command.DeleteProductCommand(productId));
+        return Ok(result);
+    }
+
+    [HttpPut("{productId}")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Products(Guid productId, [FromBody] Command.UpdateProductCommand updateProduct)
+    {
+        var updateProductCommand = new Command.UpdateProductCommand(productId, updateProduct.Name, updateProduct.Price, updateProduct.Description);
+        var result = await Sender.Send(updateProductCommand);
+        return Ok(result);
+    }
+
 }
