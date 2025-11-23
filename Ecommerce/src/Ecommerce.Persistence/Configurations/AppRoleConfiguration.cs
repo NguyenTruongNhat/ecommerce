@@ -13,9 +13,6 @@ internal sealed class AppRoleConfiguration : IEntityTypeConfiguration<AppRole>
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Description)
-            .HasMaxLength(250).IsRequired(true);
-        builder.Property(x => x.RoleCode).HasMaxLength(50).IsRequired(true);
 
         // Each User can have many RoleClaims
         builder.HasMany(e => e.Claims)
@@ -23,16 +20,5 @@ internal sealed class AppRoleConfiguration : IEntityTypeConfiguration<AppRole>
             .HasForeignKey(uc => uc.RoleId)
             .IsRequired();
 
-        // Each User can have many entries in the UserRole join table
-        builder.HasMany(e => e.UserRoles)
-            .WithOne()
-            .HasForeignKey(ur => ur.RoleId)
-            .IsRequired();
-
-        // Each User can have many Permission
-        builder.HasMany(e => e.Permissions)
-            .WithOne()
-            .HasForeignKey(p => p.RoleId)
-            .IsRequired();
     }
 }
