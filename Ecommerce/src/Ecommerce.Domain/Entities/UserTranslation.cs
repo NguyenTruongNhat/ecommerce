@@ -11,6 +11,6 @@ public class UserTranslation
     public string Description { get; set; }
 
     // Navigation properties
-    public virtual AppUser User { get; set; }
+    public virtual User User { get; set; }
     public virtual Language Language { get; set; }
 }

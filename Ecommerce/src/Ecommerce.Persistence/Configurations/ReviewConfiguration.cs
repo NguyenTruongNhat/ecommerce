@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,12 +8,10 @@ internal class ReviewConfiguration : IEntityTypeConfiguration<Review>
 {
     public void Configure(EntityTypeBuilder<Review> builder)
     {
-        builder.ToTable("Review");
+        builder.ToTable(TableNames.Review);
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Content).IsRequired();
-        builder.Property(x => x.UpdateCount).HasDefaultValue(0);
-
 
         builder.HasIndex(x => new { x.OrderId, x.ProductId }).IsUnique();
         builder.HasIndex(x => x.UserId);

@@ -1,4 +1,5 @@
 using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,7 +9,7 @@ internal class UserTranslationConfiguration : IEntityTypeConfiguration<UserTrans
 {
     public void Configure(EntityTypeBuilder<UserTranslation> builder)
     {
-        builder.ToTable("UserTranslation");
+        builder.ToTable(TableNames.UserTranslation);
         builder.HasKey(x => x.Id);
         
         builder.Property(x => x.Address).HasMaxLength(500);
@@ -17,6 +18,5 @@ internal class UserTranslationConfiguration : IEntityTypeConfiguration<UserTrans
             .WithMany(x => x.UserTranslations)
             .HasForeignKey(x => x.LanguageId)
             .OnDelete(DeleteBehavior.NoAction);
-
     }
 }

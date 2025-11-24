@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,12 +8,11 @@ internal class ProductTranslationConfiguration : IEntityTypeConfiguration<Produc
 {
     public void Configure(EntityTypeBuilder<ProductTranslation> builder)
     {
-        builder.ToTable("ProductTranslation");
+        builder.ToTable(TableNames.ProductTranslation);
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Name).HasMaxLength(500).IsRequired();
         builder.Property(x => x.Description).IsRequired();
-
 
         builder.HasIndex(x => x.ProductId);
 

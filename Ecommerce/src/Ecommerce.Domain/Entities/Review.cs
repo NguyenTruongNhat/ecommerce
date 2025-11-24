@@ -15,6 +15,6 @@ public class Review
     // Navigation properties
     public virtual Order Order { get; set; }
     public virtual Product Product { get; set; }
-    public virtual AppUser User { get; set; }
+    public virtual User User { get; set; }
     public virtual ICollection<ReviewMedia> Medias { get; set; }
 }

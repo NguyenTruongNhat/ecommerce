@@ -10,6 +10,6 @@ public class RefreshToken
     public DateTime ExpiresAt { get; set; }
 
     // Navigation properties
-    public virtual AppUser User { get; set; }
+    public virtual User User { get; set; }
     public virtual Device Device { get; set; }
 }

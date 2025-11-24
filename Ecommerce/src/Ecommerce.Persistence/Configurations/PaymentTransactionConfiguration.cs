@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,16 +8,13 @@ internal class PaymentTransactionConfiguration : IEntityTypeConfiguration<Paymen
 {
     public void Configure(EntityTypeBuilder<PaymentTransaction> builder)
     {
-        builder.ToTable("PaymentTransaction");
+        builder.ToTable(TableNames.PaymentTransaction);
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Gateway).HasMaxLength(100).IsRequired();
         builder.Property(x => x.TransactionDate).HasDefaultValueSql("GETDATE()");
         builder.Property(x => x.AccountNumber).HasMaxLength(100);
         builder.Property(x => x.SubAccount).HasMaxLength(250);
-        builder.Property(x => x.AmountIn).HasDefaultValue(0);
-        builder.Property(x => x.AmountOut).HasDefaultValue(0);
-        builder.Property(x => x.Accumulated).HasDefaultValue(0);
         builder.Property(x => x.Code).HasMaxLength(250);
         builder.Property(x => x.TransactionContent).HasColumnType("nvarchar(max)");
         builder.Property(x => x.ReferenceNumber).HasMaxLength(255);

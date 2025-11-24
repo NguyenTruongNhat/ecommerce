@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,11 +8,10 @@ internal class BrandConfiguration : IEntityTypeConfiguration<Brand>
 {
     public void Configure(EntityTypeBuilder<Brand> builder)
     {
-        builder.ToTable("Brand");
+        builder.ToTable(TableNames.Brand);
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Name).HasMaxLength(500).IsRequired();
         builder.Property(x => x.Logo).HasMaxLength(1000).IsRequired();
-
     }
 }

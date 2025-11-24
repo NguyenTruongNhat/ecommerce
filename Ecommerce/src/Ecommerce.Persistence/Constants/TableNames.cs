@@ -3,24 +3,14 @@
 internal static class TableNames
 {
     // *********** Plural Nouns ***********
-    internal const string Actions = nameof(Actions);
-    internal const string Functions = nameof(Functions);
-    internal const string ActionInFunctions = nameof(ActionInFunctions);
-    internal const string Permissions = nameof(Permissions);
-
-    internal const string AppUsers = nameof(AppUsers);
-    internal const string AppRoles = nameof(AppRoles);
-    internal const string AppUserRoles = nameof(AppUserRoles);
-
-    internal const string AppUserClaims = nameof(AppUserClaims); // IdentityUserClaim
-    internal const string AppRoleClaims = nameof(AppRoleClaims); // IdentityRoleClaim
-    internal const string AppUserLogins = nameof(AppUserLogins); // IdentityRoleClaim
-    internal const string AppUserTokens = nameof(AppUserTokens); // IdentityUserToken
+    internal const string User = nameof(User);
+    internal const string Permission = nameof(Permission);
+    internal const string PermissionsRoles = nameof(PermissionsRoles);
+    internal const string Role = nameof(Role);
 
     // *********** Singular Nouns ***********
     public const string Product = nameof(Product);
     public const string Language = nameof(Language);
-    public const string User = nameof(User);
     public const string UserTranslation = nameof(UserTranslation);
     public const string VerificationCode = nameof(VerificationCode);
     public const string Device = nameof(Device);

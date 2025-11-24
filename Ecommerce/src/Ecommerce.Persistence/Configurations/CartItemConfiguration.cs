@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,10 +8,8 @@ internal class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
 {
     public void Configure(EntityTypeBuilder<CartItem> builder)
     {
-        builder.ToTable("CartItem");
+        builder.ToTable(TableNames.CartItem);
         builder.HasKey(x => x.Id);
-
-
 
         builder.HasIndex(x => new { x.UserId, x.SkuId }).IsUnique();
         builder.HasIndex(x => x.UserId);

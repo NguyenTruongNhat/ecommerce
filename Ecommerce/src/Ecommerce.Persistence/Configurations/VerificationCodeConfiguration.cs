@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,7 +8,7 @@ internal class VerificationCodeConfiguration : IEntityTypeConfiguration<Verifica
 {
     public void Configure(EntityTypeBuilder<VerificationCode> builder)
     {
-        builder.ToTable("VerificationCode");
+        builder.ToTable(TableNames.VerificationCode);
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Email).HasMaxLength(500).IsRequired();

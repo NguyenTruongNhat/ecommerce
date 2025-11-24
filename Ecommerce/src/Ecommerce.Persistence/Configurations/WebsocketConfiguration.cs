@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,15 +8,9 @@ internal class WebsocketConfiguration : IEntityTypeConfiguration<Websocket>
 {
     public void Configure(EntityTypeBuilder<Websocket> builder)
     {
-        builder.ToTable("Websocket");
+        builder.ToTable(TableNames.Websocket);
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id).IsRequired();
-
-
-        //builder.HasOne(x => x.User)
-        //    .WithMany(x => x.WebSockets)
-        //    .HasForeignKey(x => x.UserId)
-        //    .OnDelete(DeleteBehavior.Cascade);
     }
 }

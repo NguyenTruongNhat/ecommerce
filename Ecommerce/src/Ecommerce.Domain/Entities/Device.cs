@@ -12,6 +12,6 @@ public class Device
     public bool IsActive { get; set; }
 
     // Navigation properties
-    public virtual AppUser User { get; set; }
+    public virtual User User { get; set; }
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
 }

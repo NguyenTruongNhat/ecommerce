@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,12 +8,10 @@ internal class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken
 {
     public void Configure(EntityTypeBuilder<RefreshToken> builder)
     {
-        builder.ToTable("RefreshToken");
+        builder.ToTable(TableNames.RefreshToken);
         builder.HasKey(x => x.Token);
 
         builder.Property(x => x.Token).HasMaxLength(1000).IsRequired();
-
-
         builder.HasIndex(x => x.ExpiresAt);
 
         builder.HasOne(x => x.User)

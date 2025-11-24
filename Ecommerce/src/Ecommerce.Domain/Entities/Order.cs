@@ -13,8 +13,8 @@ public class Order
     public int PaymentId { get; set; }
 
     // Navigation properties
-    public virtual AppUser User { get; set; }
-    public virtual AppUser Shop { get; set; }
+    public virtual User User { get; set; }
+    public virtual User Shop { get; set; }
     public virtual Payment Payment { get; set; }
     public virtual ICollection<ProductSKUSnapshot> Items { get; set; }
     public virtual ICollection<Product> Products { get; set; }

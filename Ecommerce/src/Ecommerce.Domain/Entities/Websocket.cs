@@ -8,5 +8,5 @@ public class Websocket
     public int UserId { get; set; }
 
     // Navigation properties
-    public virtual AppUser User { get; set; }
+    public virtual User User { get; set; }
 }

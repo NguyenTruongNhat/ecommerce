@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,14 +8,13 @@ internal class ProductSKUSnapshotConfiguration : IEntityTypeConfiguration<Produc
 {
     public void Configure(EntityTypeBuilder<ProductSKUSnapshot> builder)
     {
-        builder.ToTable("ProductSKUSnapshot");
+        builder.ToTable(TableNames.ProductSKUSnapshot);
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.ProductName).HasMaxLength(500).IsRequired();
         builder.Property(x => x.Image).IsRequired();
         builder.Property(x => x.SkuValue).HasMaxLength(500).IsRequired();
         builder.Property(x => x.ProductTranslations).HasColumnType("nvarchar(max)");
-
 
         builder.HasOne(x => x.Sku)
             .WithMany(x => x.ProductSKUSnapshots)

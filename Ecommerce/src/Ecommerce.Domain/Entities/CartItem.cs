@@ -11,5 +11,5 @@ public class CartItem
 
     // Navigation properties
     public virtual SKU Sku { get; set; }
-    public virtual AppUser User { get; set; }
+    public virtual User User { get; set; }
 }

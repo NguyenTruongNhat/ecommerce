@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,7 +8,8 @@ internal class BrandTranslationConfiguration : IEntityTypeConfiguration<BrandTra
 {
     public void Configure(EntityTypeBuilder<BrandTranslation> builder)
     {
-        builder.ToTable("BrandTranslation");
+        builder.ToTable(TableNames.BrandTranslation);
+
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Name).HasMaxLength(500).IsRequired();

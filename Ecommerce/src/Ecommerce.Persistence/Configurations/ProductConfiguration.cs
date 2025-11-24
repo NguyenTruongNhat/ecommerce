@@ -1,4 +1,5 @@
 ﻿using Ecommerce.Domain.Entities;
+using Ecommerce.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,13 +9,11 @@ internal class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> builder)
     {
-        builder.ToTable("Product");
+        builder.ToTable(TableNames.Product);
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Name).HasMaxLength(500).IsRequired();
         builder.Property(x => x.Variants).HasColumnType("nvarchar(max)");
-
-
 
         builder.HasOne(x => x.Brand)
             .WithMany(x => x.Products)
