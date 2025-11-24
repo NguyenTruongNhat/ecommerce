@@ -12,7 +12,7 @@ public class User : DomainEntity<int>
     public string Avatar { get; set; }
     public string TotpSecret { get; set; }
     public UserStatus Status { get; set; }
-    public Guid RoleId { get; set; }
+    public int RoleId { get; set; }
     public virtual Role Role { get; set; }
     public virtual ICollection<Device> Devices { get; set; }
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; }

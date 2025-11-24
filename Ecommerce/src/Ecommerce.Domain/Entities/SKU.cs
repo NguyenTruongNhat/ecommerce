@@ -7,7 +7,7 @@ public class SKU
     public double Price { get; set; }
     public int Stock { get; set; }
     public string Image { get; set; }
-    public int ProductId { get; set; }
+    public Guid ProductId { get; set; }
 
     public int CreatedById { get; set; }
     public int? UpdatedById { get; set; }
