@@ -10,10 +10,18 @@ internal class ProductConfiguration : IEntityTypeConfiguration<Product>
     public void Configure(EntityTypeBuilder<Product> builder)
     {
         builder.ToTable(TableNames.Product);
-
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Name).HasMaxLength(200).IsRequired(true);
-        builder.Property(x => x.Description)
-            .HasMaxLength(250).IsRequired(true);
+
+        builder.Property(x => x.Name).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.Variants).HasColumnType("nvarchar(max)");
+
+        builder.HasOne(x => x.Brand)
+            .WithMany(x => x.Products)
+            .HasForeignKey(x => x.BrandId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasMany(x => x.Categories)
+            .WithMany(x => x.Products)
+            .UsingEntity(j => j.ToTable("ProductCategory"));
     }
 }

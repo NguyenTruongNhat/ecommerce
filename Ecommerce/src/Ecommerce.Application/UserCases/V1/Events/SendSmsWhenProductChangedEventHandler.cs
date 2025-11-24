@@ -10,13 +10,13 @@ internal class SendSmsWhenProductChangedEventHandler
     public async Task Handle(DomainEvent.ProductCreated notification, CancellationToken cancellationToken)
     {
         SendSms();
-        await Task.Delay(100000);
+        await Task.Delay(10);
     }
 
     public async Task Handle(DomainEvent.ProductDeleted notification, CancellationToken cancellationToken)
     {
         SendSms();
-        await Task.Delay(100000);
+        await Task.Delay(10);
     }
 
     private void SendSms()
