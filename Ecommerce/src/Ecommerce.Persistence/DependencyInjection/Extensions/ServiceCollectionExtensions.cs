@@ -1,10 +1,8 @@
 ﻿using Ecommerce.Domain.Abstractions;
 using Ecommerce.Domain.Abstractions.Repositories;
 using Ecommerce.Domain.Entities.Identity;
-using Ecommerce.Persistence;
 using Ecommerce.Persistence.DependencyInjection.Options;
 using Ecommerce.Persistence.Repositories;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,28 +48,6 @@ public static class ServiceCollectionExtensions
             #endregion\
         });
 
-        services.AddIdentityCore<AppUser>(opt =>
-        {
-            opt.Lockout.AllowedForNewUsers = true; // Default true
-            opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2); // Default 5
-            opt.Lockout.MaxFailedAccessAttempts = 3; // Default 5
-        })
-            .AddRoles<AppRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>();
-
-        services.Configure<IdentityOptions>(options =>
-        {
-            options.Lockout.AllowedForNewUsers = true; // Default true
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2); // Default 5
-            options.Lockout.MaxFailedAccessAttempts = 3; // Default 5
-            options.Password.RequireDigit = false;
-            options.Password.RequireLowercase = false;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequireUppercase = false;
-            options.Password.RequiredLength = 6;
-            options.Password.RequiredUniqueChars = 1;
-            options.Lockout.AllowedForNewUsers = true;
-        });
     }
 
     public static OptionsBuilder<SqlServerRetryOptions> ConfigureSqlServerRetryOptions(this IServiceCollection services, IConfigurationSection section)
