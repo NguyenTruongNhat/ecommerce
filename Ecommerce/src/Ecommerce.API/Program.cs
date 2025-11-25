@@ -51,6 +51,7 @@ builder.Services
 
 // Configure Infrastructure Services
 builder.Services.AddServicesInfrastructure();
+builder.Services.AddRedisInfrastructure(builder.Configuration);
 
 
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
