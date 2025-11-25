@@ -49,6 +49,9 @@ builder.Services
         options.SubstituteApiVersionInUrl = true;
     });
 
+// Configure Authentication & Authorization
+builder.Services.AddJwtAuthenticationAPI(builder.Configuration);
+
 // Configure Infrastructure Services
 builder.Services.AddServicesInfrastructure();
 builder.Services.AddRedisInfrastructure(builder.Configuration);
