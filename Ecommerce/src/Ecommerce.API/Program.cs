@@ -1,6 +1,7 @@
 using Ecommerce.API.DependencyInjection.Extensions;
 using Ecommerce.API.Middleware;
 using Ecommerce.Application.DependencyInjection.Extensions;
+using Ecommerce.Infrastructure.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Options;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
@@ -47,6 +48,10 @@ builder.Services
         options.GroupNameFormat = "'v'VVV";
         options.SubstituteApiVersionInUrl = true;
     });
+
+// Configure Infrastructure Services
+builder.Services.AddServicesInfrastructure();
+
 
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 
