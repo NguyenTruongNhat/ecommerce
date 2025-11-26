@@ -3,6 +3,7 @@ using Ecommerce.Domain.Abstractions.Repositories;
 using Ecommerce.Domain.Entities.Identity;
 using Ecommerce.Persistence.DependencyInjection.Options;
 using Ecommerce.Persistence.Repositories;
+using Ecommerce.Persistence.Repositories.ProductRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,7 +61,8 @@ public static class ServiceCollectionExtensions
     public static void AddRepositoryBaseConfiguration(this IServiceCollection services)
     {
         services.AddTransient(typeof(IUnitOfWork), typeof(EFUnitOfWork));
-        services.AddTransient(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>));
+        services.AddTransient(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>))
+                .AddTransient<IProductRepository, ProductRepository>();
 
     }
 }
