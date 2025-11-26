@@ -1,8 +1,9 @@
+using Ecommerce.Domain.Abstractions.Entities;
 using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Review
+public class Review : DomainEntity<Guid>
 {
     public int Id { get; set; }
     public string Content { get; set; }

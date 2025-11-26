@@ -2,7 +2,7 @@
 
 namespace Ecommerce.Domain.Entities;
 
-public class Product : DomainEntity<Guid>
+public class Product : DomainEntity<Guid> 
 {
     public string Name { get; private set; }
     public decimal Price { get; private set; }

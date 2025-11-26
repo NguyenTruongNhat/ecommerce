@@ -1,8 +1,9 @@
+using Ecommerce.Domain.Abstractions.Entities;
+
 namespace Ecommerce.Domain.Entities;
 
-public class Language
+public class Language : DomainEntity<Guid>
 {
-    public string Id { get; set; }
     public string Name { get; set; }
 
     // Navigation properties

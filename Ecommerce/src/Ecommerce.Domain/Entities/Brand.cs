@@ -1,8 +1,9 @@
+using Ecommerce.Domain.Abstractions.Entities;
+
 namespace Ecommerce.Domain.Entities;
 
-public class Brand
+public class Brand : DomainEntity<Guid>
 {
-    public int Id { get; set; }
     public string Logo { get; set; }
     public string Name { get; set; }
 

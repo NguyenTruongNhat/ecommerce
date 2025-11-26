@@ -1,11 +1,11 @@
 using Ecommerce.Contract.Enumerations;
+using Ecommerce.Domain.Abstractions.Entities;
 using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Order
+public class Order : DomainEntity<Guid>
 {
-    public int Id { get; set; }
     public int UserId { get; set; }
     public OrderStatus Status { get; set; }
     public string Receiver { get; set; }

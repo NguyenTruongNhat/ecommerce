@@ -1,6 +1,8 @@
+using Ecommerce.Domain.Abstractions.Entities;
+
 namespace Ecommerce.Domain.Entities;
 
-public class PaymentTransaction
+public class PaymentTransaction : DomainEntity<Guid>
 {
     public int Id { get; set; }
     public string Gateway { get; set; }
