@@ -10,19 +10,16 @@ using Microsoft.Extensions.Logging;
 namespace Ecommerce.Application.UserCases.V1.Commands.Product;
 public sealed class CreateProductCommandHandler : ICommandHandler<Command.CreateProductCommand>
 {
-    private readonly IRepositoryBase<Domain.Entities.Product, Guid> _productRepository;
-    private readonly IUnitOfWork _unitOfWork; // SQL-SERVER-STRATEGY-2
-    private readonly ApplicationDbContext _context; // SQL-SERVER-STRATEGY-1
+    private readonly IProductRepository _productRepository;
+    private readonly ApplicationDbContext _context; 
     private readonly IPublisher _publisher;
     private readonly ILogger<CreateProductCommandHandler> _logger;
 
-    public CreateProductCommandHandler(IRepositoryBase<Domain.Entities.Product, Guid> productRepository,
-        IUnitOfWork unitOfWork,
+    public CreateProductCommandHandler(IProductRepository productRepository,
         IPublisher publisher,
         ApplicationDbContext context, ILogger<CreateProductCommandHandler> logger)
     {
         _productRepository = productRepository;
-        _unitOfWork = unitOfWork;
         _context = context;
         _publisher = publisher;
         _logger = logger;
@@ -31,10 +28,9 @@ public sealed class CreateProductCommandHandler : ICommandHandler<Command.Create
     public async Task<Result> Handle(Command.CreateProductCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation($"CreateProductCommand::: {DateTime.Now.ToString()}");
-        var product = Domain.Entities.Product.CreateProduct(Guid.NewGuid(), request.Name, request.Price, request.Description);
+        var product = Domain.Entities.Product.CreateProduct(Guid.NewGuid(), request.Name, request.Price, request.Description, request.Variants);
 
         _productRepository.Add(product);
-        //await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _context.SaveChangesAsync();
 
         // Try to get product ID
@@ -42,15 +38,10 @@ public sealed class CreateProductCommandHandler : ICommandHandler<Command.Create
 
         var productSecond = Domain.Entities.Product.CreateProduct(Guid.NewGuid(), productCreated.Name + " Second",
             productCreated.Price,
-            productCreated.Id.ToString());
+            productCreated.Id.ToString(),"test");
 
         _productRepository.Add(productSecond);
-        //await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _context.SaveChangesAsync();
-
-        // => Send Email
-        //await _publisher.Publish(new DomainEvent.ProductCreated(productCreated.Id), cancellationToken);
-        //await _publisher.Publish(new DomainEvent.ProductDeleted(product.Id), cancellationToken);
 
         await Task.WhenAll(
             _publisher.Publish(new DomainEvent.ProductCreated(productCreated.Id), cancellationToken),

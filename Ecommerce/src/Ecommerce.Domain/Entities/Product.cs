@@ -10,10 +10,10 @@ public class Product : DomainEntity<Guid>
     public DateTime? PublishedAt { get; set; }
     public double BasePrice { get; set; }
     public double VirtualPrice { get; set; }
-    public int BrandId { get; set; }
-    public string[] Images { get; set; }
-    public string Variants { get; set; }
-    public int CreatedById { get; set; }
+    public int? BrandId { get; set; }
+    public string[] Images { get; set; } = new string[0];
+    public string? Variants { get; set; }
+    public int? CreatedById { get; set; }
     public int? UpdatedById { get; set; }
     public int? DeletedById { get; set; }
 
@@ -26,12 +26,12 @@ public class Product : DomainEntity<Guid>
     public virtual ICollection<Order> Orders { get; set; }
     public virtual ICollection<ProductSKUSnapshot> ProductSKUSnapshots { get; set; }
 
-    public static Product CreateProduct(Guid id, string name, decimal price, string description)
+    public static Product CreateProduct(Guid id, string name, decimal price, string description, string variants)
     {
-        return new Product(id, name, price, description);
+        return new Product(id, name, price, description, variants);
     }
 
-    public Product(Guid id, string name, decimal price, string description)
+    public Product(Guid id, string name, decimal price, string description, string variants)
     {
         //if (!NameValidation(name))
         //    throw new ArgumentNullException();
@@ -39,6 +39,7 @@ public class Product : DomainEntity<Guid>
         Name = name;
         Price = price;
         Description = description;
+        Variants = variants;
     }
 
     public void Update(string name, decimal price, string description)
