@@ -1,10 +1,10 @@
 using Ecommerce.Contract.Enumerations;
+using Ecommerce.Domain.Abstractions.Entities;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Payment
-{
-    public int Id { get; set; }
+public class Payment : DomainEntity<Guid>
+{ 
     public PaymentStatus Status { get; set; }
 
     // Navigation properties

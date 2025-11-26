@@ -1,8 +1,9 @@
+using Ecommerce.Domain.Abstractions.Entities;
+
 namespace Ecommerce.Domain.Entities;
 
-public class Category
+public class Category : DomainEntity<Guid>
 {
-    public int Id { get; set; }
     public string Name { get; set; }
     public string Logo { get; set; }
     public int? ParentCategoryId { get; set; }

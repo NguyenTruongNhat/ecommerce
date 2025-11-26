@@ -1,8 +1,9 @@
+using Ecommerce.Domain.Abstractions.Entities;
+
 namespace Ecommerce.Domain.Entities;
 
-public class ProductSKUSnapshot
+public class ProductSKUSnapshot : DomainEntity<Guid>
 {
-    public int Id { get; set; }
     public string ProductName { get; set; }
     public double SkuPrice { get; set; }
     public string Image { get; set; }

@@ -1,8 +1,9 @@
+using Ecommerce.Domain.Abstractions.Entities;
+
 namespace Ecommerce.Domain.Entities;
 
-public class BrandTranslation
+public class BrandTranslation : DomainEntity<Guid>
 {
-    public int Id { get; set; }
     public int BrandId { get; set; }
     public string LanguageId { get; set; }
     public string Name { get; set; }

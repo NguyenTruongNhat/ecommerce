@@ -1,10 +1,10 @@
+using Ecommerce.Domain.Abstractions.Entities;
 using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Device
+public class Device : DomainEntity<Guid>
 {
-    public int Id { get; set; }
     public int UserId { get; set; }
     public string UserAgent { get; set; }
     public string Ip { get; set; }

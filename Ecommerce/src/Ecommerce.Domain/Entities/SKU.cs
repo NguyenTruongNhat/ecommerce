@@ -1,8 +1,9 @@
+using Ecommerce.Domain.Abstractions.Entities;
+
 namespace Ecommerce.Domain.Entities;
 
-public class SKU
+public class SKU : DomainEntity<Guid>
 {
-    public int Id { get; set; }
     public string Value { get; set; }
     public double Price { get; set; }
     public int Stock { get; set; }
