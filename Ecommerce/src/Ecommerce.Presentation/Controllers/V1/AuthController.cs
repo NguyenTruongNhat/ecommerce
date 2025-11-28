@@ -22,6 +22,8 @@ public class AuthController : ApiController
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Register([FromBody] Command.Register body)
     {
+        var result = await Sender.Send(body);
+
         return Ok(body);
     }
 
@@ -29,7 +31,9 @@ public class AuthController : ApiController
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> SendOTP([FromBody] Command.SendOTP body)
     {
-        return Ok(body);
+        var result = await Sender.Send(body);
+
+        return Ok(result);
     }
 
     [HttpPost("login")]

@@ -19,8 +19,4 @@
 		<ProjectReference Include="..\Ecommerce.Persistence\Ecommerce.Persistence.csproj" />
 </ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="UserCases\V1\Commands\Auth\" />
-	</ItemGroup>
-
 </Project>

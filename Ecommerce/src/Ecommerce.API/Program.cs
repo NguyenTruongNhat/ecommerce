@@ -1,6 +1,7 @@
 using Ecommerce.API.DependencyInjection.Extensions;
 using Ecommerce.API.Middleware;
 using Ecommerce.Application.DependencyInjection.Extensions;
+using Ecommerce.Application.DependencyInjection.Options;
 using Ecommerce.Infrastructure.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Extensions;
 using Ecommerce.Persistence.DependencyInjection.Options;
@@ -31,6 +32,8 @@ builder
 builder.Services.ConfigureSqlServerRetryOptions(builder.Configuration.GetSection(nameof(SqlServerRetryOptions)));
 builder.Services.AddSqlConfiguration();
 
+builder.Services.ConfigureOtpOptions(builder.Configuration.GetSection(nameof(OtpOptions)));
+
 builder.Services.AddRepositoryBaseConfiguration();
 
 builder.Services.AddConfigureAutoMapper();
@@ -56,6 +59,8 @@ builder.Services.AddJwtAuthenticationAPI(builder.Configuration);
 builder.Services.AddServicesInfrastructure();
 builder.Services.AddRedisInfrastructure(builder.Configuration);
 
+// Configure IHttpContextAccessor
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 

@@ -1,8 +1,11 @@
-﻿using FluentValidation;
-using MediatR;
-using Microsoft.Extensions.DependencyInjection;
-using Ecommerce.Application.Behaviors;
+﻿using Ecommerce.Application.Behaviors;
+using Ecommerce.Application.DependencyInjection.Options;
 using Ecommerce.Application.Mapper;
+using FluentValidation;
+using MediatR;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Ecommerce.Application.DependencyInjection.Extensions;
 public static class ServiceCollectionExtensions
@@ -24,5 +27,12 @@ public static class ServiceCollectionExtensions
             cfg.AddProfile<ServiceProfile>();
         });
     }
+
+    // Options pattern helper for OTP options
+    public static OptionsBuilder<OtpOptions> ConfigureOtpOptions(this IServiceCollection services, IConfigurationSection section)
+        => services
+            .AddOptions<OtpOptions>()
+            .Bind(section)
+            .ValidateOnStart();
 
 }
