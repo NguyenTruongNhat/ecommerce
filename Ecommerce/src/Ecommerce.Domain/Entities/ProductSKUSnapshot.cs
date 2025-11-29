@@ -2,7 +2,7 @@ using Ecommerce.Domain.Abstractions.Entities;
 
 namespace Ecommerce.Domain.Entities;
 
-public class ProductSKUSnapshot : DomainEntity<Guid>
+public class ProductSKUSnapshot : DomainEntity<int>
 {
     public string ProductName { get; set; }
     public double SkuPrice { get; set; }

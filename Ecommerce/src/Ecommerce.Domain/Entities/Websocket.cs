@@ -3,9 +3,8 @@ using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Websocket : DomainEntity<Guid>
+public class Websocket : DomainEntity<int>
 {
-    public string Id { get; set; }
     public int UserId { get; set; }
 
     // Navigation properties

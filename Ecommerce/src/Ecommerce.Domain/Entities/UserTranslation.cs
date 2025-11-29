@@ -3,10 +3,10 @@ using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class UserTranslation : DomainEntity<Guid>
+public class UserTranslation : DomainEntity<int>
 {
     public int UserId { get; set; }
-    public string LanguageId { get; set; }
+    public int LanguageId { get; set; }
     public string Address { get; set; }
     public string Description { get; set; }
 

@@ -9,12 +9,10 @@ public sealed class TransactionPipelineBehavior<TRequest, TResponse>
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private readonly IUnitOfWork _unitOfWork; // SQL-SERVER-STRATEGY-2
     private readonly ApplicationDbContext _context; // SQL-SERVER-STRATEGY-1
 
-    public TransactionPipelineBehavior(IUnitOfWork unitOfWork, ApplicationDbContext context)
+    public TransactionPipelineBehavior(ApplicationDbContext context)
     {
-        _unitOfWork = unitOfWork;
         _context = context;
     }
 

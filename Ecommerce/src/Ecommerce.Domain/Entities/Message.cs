@@ -3,7 +3,7 @@ using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Message : DomainEntity<Guid>
+public class Message : DomainEntity<int>
 {
     public int FromUserId { get; set; }
     public int ToUserId { get; set; }

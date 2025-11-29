@@ -3,7 +3,7 @@ using Ecommerce.Domain.Abstractions.Entities;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Payment : DomainEntity<Guid>
+public class Payment : DomainEntity<int>
 { 
     public PaymentStatus Status { get; set; }
 

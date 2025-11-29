@@ -2,7 +2,7 @@ using Ecommerce.Domain.Abstractions.Entities;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Category : DomainEntity<Guid>
+public class Category : DomainEntity<int>
 {
     public string Name { get; set; }
     public string Logo { get; set; }

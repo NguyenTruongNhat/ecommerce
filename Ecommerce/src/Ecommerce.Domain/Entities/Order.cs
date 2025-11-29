@@ -4,7 +4,7 @@ using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Order : DomainEntity<Guid>
+public class Order : DomainEntity<int>
 {
     public int UserId { get; set; }
     public OrderStatus Status { get; set; }

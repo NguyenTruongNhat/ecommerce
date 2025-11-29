@@ -3,7 +3,7 @@ using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Device : DomainEntity<Guid>
+public class Device : DomainEntity<int>
 {
     public int UserId { get; set; }
     public string UserAgent { get; set; }

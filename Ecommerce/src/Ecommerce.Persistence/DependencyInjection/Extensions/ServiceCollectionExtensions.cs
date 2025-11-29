@@ -1,9 +1,11 @@
 ﻿using Ecommerce.Domain.Abstractions;
 using Ecommerce.Domain.Abstractions.Repositories;
-using Ecommerce.Domain.Entities.Identity;
+using Ecommerce.Domain.Abstractions.Repositories.IdentityRepository;
 using Ecommerce.Persistence.DependencyInjection.Options;
 using Ecommerce.Persistence.Repositories;
+using Ecommerce.Persistence.Repositories.IdentityRepository;
 using Ecommerce.Persistence.Repositories.ProductRepository;
+using Ecommerce.Persistence.Repositories.VerificationCodeRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,7 +64,10 @@ public static class ServiceCollectionExtensions
     {
         services.AddTransient(typeof(IUnitOfWork), typeof(EFUnitOfWork));
         services.AddTransient(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>))
-                .AddTransient<IProductRepository, ProductRepository>();
+                .AddTransient<IProductRepository, ProductRepository>()
+                .AddTransient<IUserRepository, UserRepository>()
+                .AddTransient<IVerificationCodeRepository, VerificationCodeRepository>()
+                ;
 
     }
 }

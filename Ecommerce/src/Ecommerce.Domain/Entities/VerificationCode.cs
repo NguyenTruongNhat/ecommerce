@@ -1,10 +1,10 @@
 using Ecommerce.Contract.Enumerations;
+using Ecommerce.Domain.Abstractions.Entities;
 
 namespace Ecommerce.Domain.Entities;
 
-public class VerificationCode
+public class VerificationCode : DomainEntity<int>
 {
-    public int Id { get; set; }
     public string Email { get; set; }
     public string Code { get; set; }
     public VerificationCodeType Type { get; set; }

@@ -3,9 +3,8 @@ using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class Review : DomainEntity<Guid>
+public class Review : DomainEntity<int>
 {
-    public int Id { get; set; }
     public string Content { get; set; }
     public int Rating { get; set; }
     public int OrderId { get; set; }
