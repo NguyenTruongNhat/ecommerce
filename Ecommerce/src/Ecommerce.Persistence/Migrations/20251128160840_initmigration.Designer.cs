@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Ecommerce.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251125095034_SeedingData")]
-    partial class SeedingData
+    [Migration("20251128160840_initmigration")]
+    partial class initmigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -81,9 +81,8 @@ namespace Ecommerce.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("LanguageId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<int>("LanguageId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -171,9 +170,8 @@ namespace Ecommerce.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("LanguageId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<int>("LanguageId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -304,29 +302,6 @@ namespace Ecommerce.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Role", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Description = "Administrator role with full permissions",
-                            IsActive = true,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Description = "Client role for end users",
-                            IsActive = true,
-                            Name = "Client"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Description = "Seller role for merchants",
-                            IsActive = true,
-                            Name = "Seller"
-                        });
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Entities.Identity.User", b =>
@@ -379,27 +354,16 @@ namespace Ecommerce.Persistence.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("User", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Avatar = "",
-                            Email = "admin@ecommerce.local",
-                            Name = "System Administrator",
-                            Password = "Admin@123",
-                            PhoneNumber = "0000000000",
-                            RoleId = 1,
-                            Status = 0,
-                            TotpSecret = ""
-                        });
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Entities.Language", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -561,10 +525,10 @@ namespace Ecommerce.Persistence.Migrations
                     b.Property<double>("BasePrice")
                         .HasColumnType("float");
 
-                    b.Property<int>("BrandId")
+                    b.Property<int?>("BrandId")
                         .HasColumnType("int");
 
-                    b.Property<int>("CreatedById")
+                    b.Property<int?>("CreatedById")
                         .HasColumnType("int");
 
                     b.Property<int?>("DeletedById")
@@ -593,7 +557,6 @@ namespace Ecommerce.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Variants")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("VirtualPrice")
@@ -670,9 +633,8 @@ namespace Ecommerce.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("LanguageId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<int>("LanguageId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -841,9 +803,8 @@ namespace Ecommerce.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("LanguageId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<int>("LanguageId")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -893,8 +854,11 @@ namespace Ecommerce.Persistence.Migrations
 
             modelBuilder.Entity("Ecommerce.Domain.Entities.Websocket", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -1100,8 +1064,7 @@ namespace Ecommerce.Persistence.Migrations
                     b.HasOne("Ecommerce.Domain.Entities.Brand", "Brand")
                         .WithMany("Products")
                         .HasForeignKey("BrandId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Brand");
                 });

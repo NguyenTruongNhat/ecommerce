@@ -3,7 +3,7 @@ using Ecommerce.Domain.Abstractions.Entities;
 
 namespace Ecommerce.Domain.Entities;
 
-public class ReviewMedia : DomainEntity<Guid>
+public class ReviewMedia : DomainEntity<int>
 {
     public string Url { get; set; }
     public MediaType Type { get; set; }

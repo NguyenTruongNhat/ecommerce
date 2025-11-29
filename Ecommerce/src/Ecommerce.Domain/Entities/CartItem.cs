@@ -3,7 +3,7 @@ using Ecommerce.Domain.Entities.Identity;
 
 namespace Ecommerce.Domain.Entities;
 
-public class CartItem : DomainEntity<Guid>
+public class CartItem : DomainEntity<int>
 {
     public int Quantity { get; set; }
     public int SkuId { get; set; }
