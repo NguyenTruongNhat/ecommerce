@@ -20,7 +20,7 @@ public class AuthController : ApiController
 
     [HttpPost("register")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Register([FromBody] Command.Register body)
+    public async Task<IActionResult> Register([FromBody] Command.RegisterCommand body)
     {
         var result = await Sender.Send(body);
 
