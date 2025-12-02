@@ -7,7 +7,7 @@ public static class Command
 {
     public record Revoke(string AccessToken) : ICommand;
     public record SendOTPCommand(string Email, VerificationCodeType Type) : ICommand;
-    public record Register(
+    public record RegisterCommand(
     string Email,
     string Password,
     string Name,
