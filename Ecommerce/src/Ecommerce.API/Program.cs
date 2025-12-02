@@ -14,6 +14,7 @@ var configuration = new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
         .AddJsonFile("appsettings.json")
         .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
+        .AddEnvironmentVariables()
         .Build();
 
 var logger = new LoggerConfiguration()
@@ -32,6 +33,7 @@ builder
 builder.Services.ConfigureSqlServerRetryOptions(builder.Configuration.GetSection(nameof(SqlServerRetryOptions)));
 builder.Services.AddSqlConfiguration();
 
+// Configure Infrastructure Options
 builder.Services.ConfigureOtpOptions(builder.Configuration.GetSection(nameof(OtpOptions)));
 
 builder.Services.AddRepositoryBaseConfiguration();
@@ -58,6 +60,8 @@ builder.Services.AddJwtAuthenticationAPI(builder.Configuration);
 // Configure Infrastructure Services
 builder.Services.AddServicesInfrastructure();
 builder.Services.AddRedisInfrastructure(builder.Configuration);
+
+builder.Services.AddMailInfrastructure(builder.Configuration);
 
 // Configure IHttpContextAccessor
 builder.Services.AddHttpContextAccessor();

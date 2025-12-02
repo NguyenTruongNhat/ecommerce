@@ -9,7 +9,9 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Core" Version="1.6.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.11" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Resend" Version="0.2.1" />
   </ItemGroup>
 
   <ItemGroup>
