@@ -64,6 +64,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddTransient(typeof(IUnitOfWork), typeof(EFUnitOfWork));
         services.AddTransient(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>))
+                .AddTransient<IRoleRepository, RoleRepository>()
                 .AddTransient<IProductRepository, ProductRepository>()
                 .AddTransient<IUserRepository, UserRepository>()
                 .AddTransient<IVerificationCodeRepository, VerificationCodeRepository>()
