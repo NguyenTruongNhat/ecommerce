@@ -3,7 +3,7 @@ using Ecommerce.Domain.Abstractions.Repositories;
 using Ecommerce.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Ecommerce.Persistence.Repositories.VerificationCodeRepository;
+namespace Ecommerce.Persistence.Repositories;
 
 public sealed class VerificationCodeRepository : RepositoryBase<VerificationCode, int>, IVerificationCodeRepository
 {

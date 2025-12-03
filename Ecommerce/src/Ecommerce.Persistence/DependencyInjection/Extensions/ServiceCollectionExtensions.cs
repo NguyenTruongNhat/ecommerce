@@ -4,8 +4,6 @@ using Ecommerce.Domain.Abstractions.Repositories.IdentityRepository;
 using Ecommerce.Persistence.DependencyInjection.Options;
 using Ecommerce.Persistence.Repositories;
 using Ecommerce.Persistence.Repositories.IdentityRepository;
-using Ecommerce.Persistence.Repositories.ProductRepository;
-using Ecommerce.Persistence.Repositories.VerificationCodeRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,12 +61,32 @@ public static class ServiceCollectionExtensions
     public static void AddRepositoryBaseConfiguration(this IServiceCollection services)
     {
         services.AddTransient(typeof(IUnitOfWork), typeof(EFUnitOfWork));
-        services.AddTransient(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>))
-                .AddTransient<IRoleRepository, RoleRepository>()
-                .AddTransient<IProductRepository, ProductRepository>()
-                .AddTransient<IUserRepository, UserRepository>()
-                .AddTransient<IVerificationCodeRepository, VerificationCodeRepository>()
-                ;
+        services.AddTransient(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>));
 
+        // identity
+        services.AddTransient<IRoleRepository, RoleRepository>();
+        services.AddTransient<IPermissionRepository, PermissionRepository>();
+        services.AddTransient<IUserRepository, UserRepository>();
+
+        // domain repositories
+        services.AddTransient<IProductRepository, ProductRepository>();
+        services.AddTransient<IBrandRepository, BrandRepository>();
+        services.AddTransient<IBrandTranslationRepository, BrandTranslationRepository>();
+        services.AddTransient<ICategoryRepository, CategoryRepository>();
+        services.AddTransient<ICategoryTranslationRepository, CategoryTranslationRepository>();
+        services.AddTransient<ICartItemRepository, CartItemRepository>();
+        services.AddTransient<IDeviceRepository, DeviceRepository>();
+        services.AddTransient<ILanguageRepository, LanguageRepository>();
+        services.AddTransient<IMessageRepository, MessageRepository>();
+        services.AddTransient<IPaymentRepository, PaymentRepository>();
+        services.AddTransient<IPaymentTransactionRepository, PaymentTransactionRepository>();
+        services.AddTransient<IProductSKUSnapshotRepository, ProductSKUSnapshotRepository>();
+        services.AddTransient<IProductTranslationRepository, ProductTranslationRepository>();
+        services.AddTransient<IOrderRepository, OrderRepository>();
+        services.AddTransient<IReviewRepository, ReviewRepository>();
+        services.AddTransient<IReviewMediaRepository, ReviewMediaRepository>();
+        services.AddTransient<ISkuRepository, SkuRepository>();
+        services.AddTransient<IUserTranslationRepository, UserTranslationRepository>();
+        services.AddTransient<IVerificationCodeRepository, VerificationCodeRepository>();
     }
 }
