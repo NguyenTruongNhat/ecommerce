@@ -88,5 +88,6 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ISkuRepository, SkuRepository>();
         services.AddTransient<IUserTranslationRepository, UserTranslationRepository>();
         services.AddTransient<IVerificationCodeRepository, VerificationCodeRepository>();
+        services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
     }
 }

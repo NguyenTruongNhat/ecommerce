@@ -1,3 +1,4 @@
+using System.Reflection;
 using Ecommerce.Contract.Services.V1.Identity;
 using Ecommerce.Presentation.Abstractions;
 using MediatR;
@@ -41,13 +42,24 @@ public class AuthController : ApiController
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Login(
-        [FromBody] Query.Login body,
+        [FromBody] Command.LoginCommand body,
         [FromHeader(Name = "User-Agent")] string userAgent,
         [FromServices] IHttpContextAccessor httpContextAccessor
         )
     {
-        Console.WriteLine(userAgent, httpContextAccessor);
-        return Ok(body);
+        var ip = httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+        var command = body with
+        {
+            UserAgent = userAgent,
+            Ip = httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown"
+        };
+        var result = await Sender.Send(command);
+
+        if (result.IsFailure)
+            return HandlerFailure(result);
+
+        return Ok(result);
     }
 
     [HttpPost("refresh-token")]
