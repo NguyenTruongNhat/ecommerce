@@ -6,4 +6,6 @@ public class JwtOption
     public string Audience { get; set; }
     public string SecretKey { get; set; }
     public int ExpireMin { get; set; }
+    public int ExpireDay { get; set; }
+
 }

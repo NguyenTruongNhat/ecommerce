@@ -34,14 +34,21 @@ public class JwtTokenService : IJwtTokenService
         return tokenString;
     }
 
-    public string GenerateRefreshToken()
+    public string GenerateRefreshToken(IEnumerable<Claim> claims)
     {
-        var randomNumber = new byte[32];
-        using (var rng = RandomNumberGenerator.Create())
-        {
-            rng.GetBytes(randomNumber);
-            return Convert.ToBase64String(randomNumber);
-        }
+        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOption.SecretKey));
+        var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
+
+        var tokeOptions = new JwtSecurityToken(
+            issuer: jwtOption.Issuer,
+            audience: jwtOption.Audience,
+            claims: claims,
+            expires: DateTime.Now.AddMinutes(jwtOption.ExpireMin),
+            signingCredentials: signinCredentials
+        );
+
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(tokeOptions);
+        return tokenString;
     }
 
     public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)

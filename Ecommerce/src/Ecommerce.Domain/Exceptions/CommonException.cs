@@ -14,4 +14,10 @@ public static class CommonException
     {
         public Expired() : base($"The item is expired") { }
     }
+    public class WrongPassword : BadRequestException
+    {
+        public WrongPassword() : base($"Wrong password") { }
+    }
+
+
 }
