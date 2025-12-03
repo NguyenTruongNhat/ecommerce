@@ -2,7 +2,7 @@
 
 namespace Ecommerce.Contract.Services.V1.Identity.Validators;
 
-public class LoginValidator : AbstractValidator<Query.Login>
+public class LoginValidator : AbstractValidator<Command.LoginCommand>
 {
     public LoginValidator()
     {

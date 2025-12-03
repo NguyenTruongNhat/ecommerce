@@ -25,4 +25,8 @@ public static class Command
     public record DisableTwoFactor(
     string TotpCode,
     string Code) : ICommand;
+    public record LoginCommand(string Email,
+        string Password,
+        string TotpCode,
+        string Code) : ICommand<Response.Authenticated>;
 }

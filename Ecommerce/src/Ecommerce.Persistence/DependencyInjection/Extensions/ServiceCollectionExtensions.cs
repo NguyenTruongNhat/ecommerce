@@ -4,8 +4,6 @@ using Ecommerce.Domain.Abstractions.Repositories.IdentityRepository;
 using Ecommerce.Persistence.DependencyInjection.Options;
 using Ecommerce.Persistence.Repositories;
 using Ecommerce.Persistence.Repositories.IdentityRepository;
-using Ecommerce.Persistence.Repositories.ProductRepository;
-using Ecommerce.Persistence.Repositories.VerificationCodeRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

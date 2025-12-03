@@ -41,7 +41,7 @@ public class AuthController : ApiController
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Login(
-        [FromBody] Query.Login body,
+        [FromBody] Command.LoginCommand body,
         [FromHeader(Name = "User-Agent")] string userAgent,
         [FromServices] IHttpContextAccessor httpContextAccessor
         )
