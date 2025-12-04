@@ -87,9 +87,14 @@ public class AuthController : ApiController
 
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Logout([FromBody] Command.Logout body)
+    public async Task<IActionResult> Logout([FromBody] Command.LogoutCommand body)
     {
-        return Ok(body);
+        var result = await Sender.Send(body);
+
+        if (result.IsFailure)
+            return HandlerFailure(result);
+
+        return Ok(result);
     }
 
     [HttpGet("google-link")]
@@ -115,7 +120,12 @@ public class AuthController : ApiController
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ForgotPassword([FromBody] Command.ForgotPassword body)
     {
-        return Ok(body);
+        var result = await Sender.Send(body);
+
+        if (result.IsFailure)
+            return HandlerFailure(result);
+
+        return Ok(result);
     }
 
     [HttpPost("2fa/setup")]

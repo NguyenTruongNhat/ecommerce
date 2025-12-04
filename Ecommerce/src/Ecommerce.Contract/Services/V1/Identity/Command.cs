@@ -16,7 +16,7 @@ public static class Command
     string Code) : ICommand;
 
     public record RefreshTokenCommand(string RefreshTokenValue, string UserAgent, string Ip) : ICommand<Response.Authenticated>;
-    public record Logout(string RefreshTokenValue) : ICommand;
+    public record LogoutCommand(string RefreshToken) : ICommand;
     public record ForgotPassword(
     string Email,
     string Code,

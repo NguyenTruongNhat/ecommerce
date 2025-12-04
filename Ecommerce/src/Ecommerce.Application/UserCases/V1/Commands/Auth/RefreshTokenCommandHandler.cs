@@ -6,36 +6,22 @@ using Ecommerce.Contract.Services.V1.Identity;
 using Ecommerce.Domain.Abstractions.Repositories;
 using Ecommerce.Domain.Abstractions.Repositories.IdentityRepository;
 using Ecommerce.Domain.Entities;
-using Ecommerce.Domain.Entities.Identity;
 using Ecommerce.Domain.Exceptions;
 
 namespace Ecommerce.Application.UserCases.V1.Commands.Auth;
 public class RefreshTokenCommandHandler : ICommandHandler<Command.RefreshTokenCommand, Response.Authenticated>
 {
-
-    private readonly IRoleRepository _roleRepository;
-    private readonly IHashingService _hashingService;
-    private readonly IUserRepository _userRepository;
-    private readonly IVerificationCodeRepository _verificationCodeRepository;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IDeviceRepository _deviceRepository;
     private readonly IAuthenticationService _authenticationService;
 
     public RefreshTokenCommandHandler(
-        IRoleRepository roleRepository,
-        IHashingService hashingService,
-        IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
-        IVerificationCodeRepository verificationCodeRepository,
         IJwtTokenService jwtTokenService,
         IDeviceRepository deviceRepository,
         IAuthenticationService authenticationService)
     {
-        _roleRepository = roleRepository;
-        _hashingService = hashingService;
-        _userRepository = userRepository;
-        _verificationCodeRepository = verificationCodeRepository;
         _jwtTokenService = jwtTokenService;
         _refreshTokenRepository = refreshTokenRepository;
         _deviceRepository = deviceRepository;

@@ -14,20 +14,17 @@ public class LoginCommandHandler : ICommandHandler<Command.LoginCommand, Respons
     private readonly IDeviceRepository _deviceRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IHashingService _hashingService;
-    private readonly IJwtTokenService _jwtTokenService;
     private readonly IAuthenticationService _authenticationService;
 
     public LoginCommandHandler(
         IUserRepository userRepository,
         IHashingService hashingService,
-        IJwtTokenService jwtTokenService,
         IDeviceRepository deviceRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IAuthenticationService authenticationService)
     {
         _userRepository = userRepository;
         _hashingService = hashingService;
-        _jwtTokenService = jwtTokenService;
         _deviceRepository = deviceRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _authenticationService = authenticationService;

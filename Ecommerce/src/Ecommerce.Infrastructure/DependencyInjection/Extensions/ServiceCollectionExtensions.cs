@@ -10,7 +10,8 @@ public static class ServiceCollectionExtensions
 {
     public static void AddServicesInfrastructure(this IServiceCollection services)
     => services.AddTransient<IHashingService, HashingService>()
-               .AddTransient<IJwtTokenService, JwtTokenService>();
+               .AddTransient<IJwtTokenService, JwtTokenService>()
+               .AddTransient<IAuthenticationService, AuthenticationService>();
 
     public static void AddRedisInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
