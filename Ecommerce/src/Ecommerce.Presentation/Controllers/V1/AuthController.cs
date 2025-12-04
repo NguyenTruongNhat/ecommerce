@@ -65,13 +65,24 @@ public class AuthController : ApiController
     [HttpPost("refresh-token")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RefreshToken(
-        [FromBody] Command.RefreshToken body,
+        [FromBody] Command.RefreshTokenCommand body,
         [FromHeader(Name = "User-Agent")] string userAgent,
         [FromServices] IHttpContextAccessor httpContextAccessor
         )
     {
-        Console.WriteLine(body.ToString(), userAgent, httpContextAccessor);
-        return Ok();
+        var ip = httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+        var command = body with
+        {
+            UserAgent = userAgent,
+            Ip = httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown"
+        };
+        var result = await Sender.Send(command);
+
+        if (result.IsFailure)
+            return HandlerFailure(result);
+
+        return Ok(result);
     }
 
     [HttpPost("logout")]

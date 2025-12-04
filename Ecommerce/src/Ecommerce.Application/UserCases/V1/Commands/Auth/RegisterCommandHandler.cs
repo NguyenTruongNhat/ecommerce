@@ -16,7 +16,6 @@ public class RegisterCommandHandler : ICommandHandler<Command.RegisterCommand>
     private readonly IUserRepository _userRepository;
     private readonly IVerificationCodeRepository _verificationCodeRepository;
 
-    // Dependency Injection qua Constructor
     public RegisterCommandHandler(
         IRoleRepository roleRepository,
         IHashingService hashingService,
