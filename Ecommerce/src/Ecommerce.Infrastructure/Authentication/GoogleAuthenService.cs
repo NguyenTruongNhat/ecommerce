@@ -1,68 +1,43 @@
 ﻿using System.Text;
 using Ecommerce.Application.Abstractions;
+using Ecommerce.Contract.Services.V1.Identity;
+using Ecommerce.Contract.Services.V1.Identity.Models;
 using Ecommerce.Domain.Abstractions.Repositories.IdentityRepository;
+using Ecommerce.Infrastructure.DependencyInjection.Options;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Oauth2.v2;
 using Google.Apis.Services;
-using Microsoft.Extensions.Configuration;
+using static Ecommerce.Contract.Services.V1.Identity.Response;
 
 namespace Ecommerce.Infrastructure.Authentication;
-
-public interface IGoogleService
-{
-    string GetAuthorizationUrl(GoogleAuthState state);
-    Task<AuthTokenResponse> GoogleCallbackAsync(string code, string state);
-}
-
-public class AuthTokenResponse
-{
-}
-public class GoogleAuthState
-{
-    public string UserAgent { get; set; } = "Unknown";
-    public string Ip { get; set; } = "Unknown";
-}
-public class GoogleService : IGoogleService
+public class GoogleAuthenService : IGoogleAuthenService
 {
     private readonly IHashingService _hashingService;
     private readonly IRoleRepository _roleRepository;
     private readonly IAuthenticationService _authService;
 
     private readonly GoogleAuthorizationCodeFlow _flow;
+    private readonly GoogleAuthOptions _options;
 
-    public GoogleService(
+    public string RedirectUri => _options.RedirectUri;
+
+    public GoogleAuthenService(
         //IAuthRepository authRepository,
         IHashingService hashingService,
         IRoleRepository roleRepository,
-        IAuthenticationService authService,
-        IConfiguration config)
+        IAuthenticationService authService
+        )
     {
         _hashingService = hashingService;
         _roleRepository = roleRepository;
         _authService = authService;
 
-        _flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
-        {
-            ClientSecrets = new ClientSecrets
-            {
-                ClientId = config["Google:ClientId"],
-                ClientSecret = config["Google:ClientSecret"]
-            },
-            Scopes = new[]
-            {
-                "https://www.googleapis.com/auth/userinfo.email",
-                "https://www.googleapis.com/auth/userinfo.profile"
-            }
-        });
+        _flow = BuildGoogleFlow(_options);
 
-        RedirectUri = config["Google:RedirectUri"];
     }
 
-    public string RedirectUri { get; }
-
-    // Tạo URL đăng nhập
-    public string GetAuthorizationUrl(GoogleAuthState state)
+    public string GetAuthorizationUrl(Query.GoogleLink state)
     {
         var stateJson = Convert.ToBase64String(Encoding.UTF8.GetBytes(
             System.Text.Json.JsonSerializer.Serialize(state)
@@ -80,24 +55,19 @@ public class GoogleService : IGoogleService
         string ip = "Unknown";
 
         // 1. Decode state (base64 → object)
-        try
+
+        if (!string.IsNullOrEmpty(state))
         {
-            if (!string.IsNullOrEmpty(state))
-            {
-                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(state));
-                var clientInfo = System.Text.Json.JsonSerializer.Deserialize<GoogleAuthState>(decoded);
-                userAgent = clientInfo?.UserAgent ?? "Unknown";
-                ip = clientInfo?.Ip ?? "Unknown";
-            }
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(state));
+            var clientInfo = System.Text.Json.JsonSerializer.Deserialize<GoogleAuthState>(decoded);
+            userAgent = clientInfo?.UserAgent ?? "Unknown";
+            ip = clientInfo?.Ip ?? "Unknown";
         }
-        catch
-        {
-            // Không throw — giống NestJS
-        }
+
+
 
         try
         {
-            // 2. Exchange code → token
             var token = await _flow.ExchangeCodeForTokenAsync(
                 userId: "current-user",
                 code: code,
@@ -107,14 +77,14 @@ public class GoogleService : IGoogleService
 
             var credential = new UserCredential(_flow, "current-user", token);
 
-            // 3. Lấy thông tin user từ Google API
+            // 3. get user info from Google API
             var oauthService = new Oauth2Service(new BaseClientService.Initializer
             {
                 HttpClientInitializer = credential,
                 ApplicationName = "Ecommerce"
             });
 
-            // 5. Lấy thông tin người dùng Google
+            // 5. Get user infor
             var googleUser = await oauthService.Userinfo.Get().ExecuteAsync();
             if (googleUser.Email == null)
             {
@@ -122,10 +92,8 @@ public class GoogleService : IGoogleService
                 //throw new GoogleUserInfoException();
             }
 
-            //// 4. Tìm user trong database
             //var user = await _authRepository.FindUniqueUserIncludeRole(googleUser.Email);
 
-            //// Nếu chưa có → tạo mới
             //if (user == null)
             //{
             //    var roleId = await _roleRepository.GetClientRoleId();
@@ -143,7 +111,7 @@ public class GoogleService : IGoogleService
             //    });
             //}
 
-            //// 5. Tạo device
+            //// 5. Create device
             //var device = await _authRepository.CreateDevice(new CreateDeviceModel
             //{
             //    UserId = user.Id,
@@ -167,6 +135,23 @@ public class GoogleService : IGoogleService
             Console.WriteLine("Error in GoogleCallback: " + ex);
             throw;
         }
+    }
+
+    private static GoogleAuthorizationCodeFlow BuildGoogleFlow(GoogleAuthOptions opts)
+    {
+        return new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+        {
+            ClientSecrets = new ClientSecrets
+            {
+                ClientId = opts.ClientId,
+                ClientSecret = opts.ClientSecret
+            },
+            Scopes = new[]
+            {
+                "https://www.googleapis.com/auth/userinfo.email",
+                "https://www.googleapis.com/auth/userinfo.profile"
+            }
+        });
     }
 }
 

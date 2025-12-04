@@ -1,11 +1,10 @@
-﻿using Ecommerce.Application.Abstractions;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Ecommerce.Application.Abstractions;
 using Ecommerce.Infrastructure.DependencyInjection.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Ecommerce.Infrastructure.Authentication;
 
