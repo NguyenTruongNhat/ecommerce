@@ -15,7 +15,7 @@ public static class Command
     string ConfirmPassword,
     string Code) : ICommand;
 
-    public record RefreshToken(string RefreshTokenValue) : ICommand;
+    public record RefreshTokenCommand(string RefreshTokenValue, string UserAgent, string Ip) : ICommand<Response.Authenticated>;
     public record Logout(string RefreshTokenValue) : ICommand;
     public record ForgotPassword(
     string Email,

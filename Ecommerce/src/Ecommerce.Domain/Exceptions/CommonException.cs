@@ -19,5 +19,10 @@ public static class CommonException
         public WrongPassword() : base($"Wrong password") { }
     }
 
+    public class InvalidToken : BadRequestException
+    {
+        public InvalidToken() : base($"The Token is invalid") { }
+    }
+
 
 }
