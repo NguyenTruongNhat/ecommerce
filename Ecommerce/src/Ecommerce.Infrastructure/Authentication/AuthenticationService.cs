@@ -10,9 +10,9 @@ using Ecommerce.Domain.Entities.Identity;
 namespace Ecommerce.Infrastructure.Authentication;
 public class AuthenticationService : IAuthenticationService
 {
-    private readonly JwtTokenService _jwtTokenService;
+    private readonly IJwtTokenService _jwtTokenService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
-    public AuthenticationService(JwtTokenService jwtTokenService, IRefreshTokenRepository refreshTokenRepository)
+    public AuthenticationService(IJwtTokenService jwtTokenService, IRefreshTokenRepository refreshTokenRepository)
     {
         _jwtTokenService = jwtTokenService;
         _refreshTokenRepository = refreshTokenRepository;

@@ -56,7 +56,7 @@ builder.Services
 builder.Services.AddJwtAuthenticationAPI(builder.Configuration);
 
 // Configure Infrastructure Services
-builder.Services.AddServicesInfrastructure();
+builder.Services.AddServicesInfrastructure(builder.Configuration);
 builder.Services.AddRedisInfrastructure(builder.Configuration);
 
 // Configure IHttpContextAccessor

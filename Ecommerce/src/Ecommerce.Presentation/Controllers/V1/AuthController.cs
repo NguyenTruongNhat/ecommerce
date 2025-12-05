@@ -1,11 +1,9 @@
-using System.Reflection;
 using Ecommerce.Contract.Services.V1.Identity;
 using Ecommerce.Presentation.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using static Ecommerce.Contract.Services.V1.Identity.Command;
 
 namespace Ecommerce.API.Controllers;
 
@@ -70,8 +68,6 @@ public class AuthController : ApiController
         [FromServices] IHttpContextAccessor httpContextAccessor
         )
     {
-        var ip = httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-
         var command = body with
         {
             UserAgent = userAgent,
@@ -101,19 +97,21 @@ public class AuthController : ApiController
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAuthorizationUrl(
         [FromHeader(Name = "User-Agent")] string userAgent,
-        [FromServices] IHttpContextAccessor httpContextAccessor
-        )
+        [FromServices] IHttpContextAccessor httpContextAccessor)
     {
-        Console.WriteLine(userAgent, httpContextAccessor);
-        return Ok();
+        var ip = httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+        var result = await Sender.Send(new Query.GoogleLink(userAgent, ip));
+
+        return Ok(result);
     }
 
     [HttpGet("google/callback")]
     [ProducesResponseType(StatusCodes.Status302Found)]
     public async Task<IActionResult> GoogleCallback([FromQuery] string code, [FromQuery] string state)
     {
-        Console.WriteLine(code, state);
-        return Redirect("URL_CHUYEN_HUONG");
+        var result = await Sender.Send(new Query.GoogleCallback(code, state));
+
+        return Redirect(result?.Value?.Link ?? "frontend.com" );
     }
 
     [HttpPost("forgot-password")]
