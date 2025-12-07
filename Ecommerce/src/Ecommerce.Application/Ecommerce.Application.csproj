@@ -20,4 +20,8 @@
 		<ProjectReference Include="..\Ecommerce.Persistence\Ecommerce.Persistence.csproj" />
 </ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="UserCases\V1\Queries\FileStorage\" />
+	</ItemGroup>
+
 </Project>
