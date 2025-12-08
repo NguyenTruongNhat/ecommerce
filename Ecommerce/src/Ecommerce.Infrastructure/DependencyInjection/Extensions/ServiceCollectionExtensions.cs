@@ -55,6 +55,7 @@ public static class ServiceCollectionExtensions
             .AddOptions<AwsS3Options>()
             .Bind(configuration.GetSection("AwsS3Options"))
             .ValidateOnStart();
+
         services.AddSingleton<IAmazonS3>(sp =>
         {
             var options = sp.GetRequiredService<IOptions<AwsS3Options>>().Value;
