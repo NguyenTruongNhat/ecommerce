@@ -19,15 +19,17 @@ public static class Command
         public List<IFormFile> Files { get; init; } = new();
     }
 
-    public record CompleteMultipartUploadCommand : ICommand
+    public record CompleteMultipartUploadCommand : ICommand<Response.CompleteMultipartUploadResponseDto>
     {
         public string UploadId { get; set; }
         public string ObjectName { get; set; }
         public List<PartETag> PartETags { get; set; }
     }
 
-    public record AbortMultipartUploadCommand : CompleteMultipartUploadCommand 
+    public record AbortMultipartUploadCommand : ICommand<Response.AbortMultipartUploadResponseDto>
     {
+        public string UploadId { get; set; }
+        public string ObjectName { get; set; }
     }
 
     public record CreateMultipartUploadCommand : BaseUploadFileDto, ICommand<Response.InitiateMultipartUploadResponseDto>

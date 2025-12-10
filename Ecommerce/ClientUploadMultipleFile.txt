@@ -29,3 +29,28 @@ const response = await fetch("/api/v1/filestorage/multiple-upload", {
     method: "POST",
     body: formData
 });
+------------------------------------------------
+**** Multipart upload workflow ****
+1. Initiate Upload
+   ? GET /api/v1/filestorage/multipart-upload-id
+   ? Response: { uploadId, objectName }
+
+2. Get Signed URLs for Parts (repeat for each part)
+   ? GET /api/v1/filestorage/multipart-upload-signed-url
+   ? Response: { signedUrl, partNumber }
+
+3. Upload Each Part (client-side)
+   ? PUT <signedUrl> with part data
+   ? Save ETag from response header
+
+4. Complete Upload
+   ? POST /api/v1/filestorage/complete-multipart
+   ? Body: { uploadId, objectName, partETags: [{ partNumber: 1, eTag: "..." }] }
+   ? Response: { objectName, eTag, downloadUrl, totalParts }
+
+OR
+
+4. Abort Upload (if failed or cancelled)
+   ? POST /api/v1/filestorage/abort-multipart
+   ? Body: { uploadId, objectName }
+   ? Response: { message, abortedAt }

@@ -102,4 +102,23 @@ public static class Response
         public int ExpiresInMinutes { get; set; }
         public DateTime ExpiresAt { get; set; }
     }
+
+    public record CompleteMultipartUploadResponseDto
+    {
+        public string ObjectName { get; set; }
+        public string UploadId { get; set; }
+        public string ETag { get; set; }
+        public string Location { get; set; }
+        public int TotalParts { get; set; }
+        public string DownloadUrl { get; set; }
+        public DateTime CompletedAt { get; set; }
+    }
+
+    public record AbortMultipartUploadResponseDto
+    {
+        public string ObjectName { get; set; }
+        public string UploadId { get; set; }
+        public string Message { get; set; }
+        public DateTime AbortedAt { get; set; }
+    }
 }

@@ -119,7 +119,7 @@ public sealed class S3FileStorageService : IFileStorageService
         }
     }
 
-    public async Task<string> GeneratePresignedUrlForPartAsync(
+    public async Task<string>   GeneratePresignedUrlForPartAsync(
         string objectName,
         string uploadId,
         int partNumber,
@@ -382,6 +382,109 @@ public sealed class S3FileStorageService : IFileStorageService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to generate presigned download URL for object: {ObjectName}", objectName);
+            throw;
+        }
+    }
+
+    public async Task<CompleteMultipartUploadResponse> CompleteMultipartUploadAsync(
+        string objectName,
+        string uploadId,
+        List<PartETag> partETags,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+
+        if (string.IsNullOrWhiteSpace(uploadId))
+            throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
+
+        if (partETags == null || partETags.Count == 0)
+            throw new ArgumentException("Part ETags list cannot be null or empty", nameof(partETags));
+
+        try
+        {
+            _logger.LogInformation(
+                "Completing multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}, TotalParts: {TotalParts}",
+                objectName, uploadId, partETags.Count);
+
+            // Sort parts by part number to ensure correct order
+            var sortedPartETags = partETags.OrderBy(p => p.PartNumber).ToList();
+
+            var request = new CompleteMultipartUploadRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectName,
+                UploadId = uploadId,
+                PartETags = sortedPartETags
+            };
+
+            var response = await _s3Client.CompleteMultipartUploadAsync(request, cancellationToken);
+
+            // Verify completion success
+            if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to complete multipart upload. Status code: {response.HttpStatusCode}");
+            }
+
+            _logger.LogInformation(
+                "Multipart upload completed successfully. ObjectName: {ObjectName}, UploadId: {UploadId}, ETag: {ETag}, Location: {Location}",
+                objectName, uploadId, response.ETag, response.Location);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to complete multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}",
+                objectName, uploadId);
+            throw;
+        }
+    }
+
+    public async Task AbortMultipartUploadAsync(
+        string objectName,
+        string uploadId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+
+        if (string.IsNullOrWhiteSpace(uploadId))
+            throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
+
+        try
+        {
+            _logger.LogInformation(
+                "Aborting multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}",
+                objectName, uploadId);
+
+            var request = new AbortMultipartUploadRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectName,
+                UploadId = uploadId
+            };
+
+            var response = await _s3Client.AbortMultipartUploadAsync(request, cancellationToken);
+
+            // Verify abort success
+            if (response.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
+            {
+                _logger.LogWarning(
+                    "Multipart upload abort returned unexpected status code: {StatusCode}",
+                    response.HttpStatusCode);
+            }
+
+            _logger.LogInformation(
+                "Multipart upload aborted successfully. ObjectName: {ObjectName}, UploadId: {UploadId}",
+                objectName, uploadId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to abort multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}",
+                objectName, uploadId);
             throw;
         }
     }

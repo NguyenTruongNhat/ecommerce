@@ -7,6 +7,7 @@ using Ecommerce.Contract.Abstractions.Shared;
 using Ecommerce.Contract.Services.V1.FileStorage.Models;
 using static Ecommerce.Contract.Services.V1.FileStorage.Command;
 using static Ecommerce.Contract.Services.V1.FileStorage.Response;
+using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
 
 namespace Ecommerce.Application.Abstractions;
@@ -72,6 +73,31 @@ public interface IFileStorageService
         string uploadId,
         int partNumber,
         int expiresInMinutes = 60,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Completes a multipart upload by combining all uploaded parts
+    /// </summary>
+    /// <param name="objectName">The unique name/key of the object in storage</param>
+    /// <param name="uploadId">The upload ID from InitiateMultipartUpload</param>
+    /// <param name="partETags">List of ETags for all uploaded parts</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Response containing ETag and location of the completed object</returns>
+    Task<CompleteMultipartUploadResponse> CompleteMultipartUploadAsync(
+        string objectName,
+        string uploadId,
+        List<PartETag> partETags,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Aborts a multipart upload and removes all uploaded parts
+    /// </summary>
+    /// <param name="objectName">The unique name/key of the object in storage</param>
+    /// <param name="uploadId">The upload ID from InitiateMultipartUpload</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task AbortMultipartUploadAsync(
+        string objectName,
+        string uploadId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
