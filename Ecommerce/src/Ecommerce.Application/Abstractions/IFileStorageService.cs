@@ -7,6 +7,7 @@ using Ecommerce.Contract.Abstractions.Shared;
 using Ecommerce.Contract.Services.V1.FileStorage.Models;
 using static Ecommerce.Contract.Services.V1.FileStorage.Command;
 using static Ecommerce.Contract.Services.V1.FileStorage.Response;
+using Microsoft.AspNetCore.Http;
 
 namespace Ecommerce.Application.Abstractions;
 
@@ -15,6 +16,20 @@ namespace Ecommerce.Application.Abstractions;
 /// </summary>
 public interface IFileStorageService
 {
+    /// <summary>
+    /// Uploads a file directly to storage
+    /// </summary>
+    /// <param name="file">The file to upload</param>
+    /// <param name="objectName">The unique name/key of the object in storage</param>
+    /// <param name="contentType">The MIME type of the file</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Upload result with object URL</returns>
+    Task<string> UploadFileAsync(
+        IFormFile file,
+        string objectName,
+        string contentType,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Generates a pre-signed URL for uploading a file
     /// </summary>

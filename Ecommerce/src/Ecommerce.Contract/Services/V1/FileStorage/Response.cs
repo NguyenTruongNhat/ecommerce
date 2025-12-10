@@ -36,4 +36,15 @@ public static class Response
         public int ExpiresInMinutes { get; set; }
         public DateTime ExpiresAt { get; set; }
     }
+
+    public record UploadLogoResponseDto
+    {
+        public string ResourceId { get; set; }
+        public string ObjectName { get; set; }
+        public string FileName { get; set; }
+        public string ContentType { get; set; }
+        public long FileSize { get; set; }
+        public string DownloadUrl { get; set; }
+        public DateTime UploadedAt { get; set; }
+    }
 }

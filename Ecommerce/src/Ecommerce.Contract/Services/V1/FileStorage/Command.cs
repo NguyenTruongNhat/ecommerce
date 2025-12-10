@@ -57,7 +57,7 @@ public static class Command
         public IFormFile File { get; set; }
     }
 
-    public record UploadLogoCommand : ICommand
+    public record UploadLogoCommand : ICommand<Response.UploadLogoResponseDto>
     {
         [Required]
         public string ResourceId { get; set; }

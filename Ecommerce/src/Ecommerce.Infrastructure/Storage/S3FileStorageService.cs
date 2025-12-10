@@ -2,6 +2,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Ecommerce.Application.Abstractions;
 using Ecommerce.Infrastructure.DependencyInjection.Options;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -69,6 +70,71 @@ public sealed class S3FileStorageService : IFileStorageService
         _s3Client = s3Client ?? throw new ArgumentNullException(nameof(s3Client));
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<string> UploadFileAsync(
+        IFormFile file,
+        string objectName,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+            throw new ArgumentException("File cannot be null or empty", nameof(file));
+
+        if (string.IsNullOrWhiteSpace(objectName))
+            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("Content type cannot be null or empty", nameof(contentType));
+
+        try
+        {
+            _logger.LogInformation(
+                "Starting direct upload to S3. ObjectName: {ObjectName}, FileName: {FileName}, FileSize: {FileSize} bytes",
+                objectName, file.FileName, file.Length);
+
+            // Create the PutObject request
+            using var stream = file.OpenReadStream();
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectName,
+                InputStream = stream,
+                ContentType = contentType,
+                AutoCloseStream = false,
+                // Set metadata
+                Metadata =
+                {
+                    ["original-filename"] = file.FileName,
+                    ["uploaded-at"] = DateTime.UtcNow.ToString("O")
+                }
+            };
+
+            // Upload the file
+            var response = await _s3Client.PutObjectAsync(putRequest, cancellationToken);
+
+            // Verify upload success
+            if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to upload file to S3. Status code: {response.HttpStatusCode}");
+            }
+
+            _logger.LogInformation(
+                "Successfully uploaded file to S3. ObjectName: {ObjectName}, ETag: {ETag}",
+                objectName, response.ETag);
+
+            // Return the object URL (public URL format)
+            var objectUrl = $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{objectName}";
+            return objectUrl;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to upload file to S3. ObjectName: {ObjectName}, FileName: {FileName}",
+                objectName, file.FileName);
+            throw;
+        }
     }
 
     public async Task<string> GeneratePresignedUploadUrlAsync(
