@@ -24,11 +24,6 @@ public sealed class CreateUploadSignedUrlCommandHandler
         Command.CreateUploadSignedUrlCommand request,
         CancellationToken cancellationToken)
     {
-
-        _logger.LogInformation(
-            "Generating upload signed URL for AppService: {AppServiceName}, FileName: {FileName}, ProgressId: {ProgressId}",
-            request.AppServiceName, request.FileName, request.UploadingProgressId);
-
         // Generate unique object name with proper structure
         var objectName = _fileStorageService.GenerateObjectName(
             request.AppServiceName,
@@ -58,6 +53,5 @@ public sealed class CreateUploadSignedUrlCommandHandler
             objectName);
 
         return Result<Response.CreateUploadSignedUrlResponseDto>.Success(response);
-
     }
 }

@@ -25,51 +25,27 @@ public sealed class PreSignedUrlCommandHandler
         Command.PreSignedUrlCommand request,
         CancellationToken cancellationToken)
     {
-        try
+        // Generate presigned URL for download (expires in 60 minutes by default)
+        var signedUrl = await _fileStorageService.GeneratePresignedDownloadUrlAsync(
+            request.ObjectName,
+            expiresInMinutes: DefaultExpirationMinutes,
+            cancellationToken);
+
+        var expiresAt = DateTime.UtcNow.AddMinutes(DefaultExpirationMinutes);
+
+        var response = new Response.PreSignedUrlResponseDto
         {
-            _logger.LogInformation("Generating presigned download URL for ObjectName: {ObjectName}, FileName: {FileName}", 
-                                                                                    request.ObjectName, request.FileName);
+            SignedUrl = signedUrl,
+            ObjectName = request.ObjectName,
+            FileName = request.FileName ?? Path.GetFileName(request.ObjectName),
+            ExpiresInMinutes = DefaultExpirationMinutes,
+            ExpiresAt = expiresAt
+        };
 
-            // Validate request
-            if (string.IsNullOrWhiteSpace(request.ObjectName))
-            {
-                _logger.LogWarning("ObjectName is required but was not provided");
-                return (Result<Response.PreSignedUrlResponseDto>)Result<Response.PreSignedUrlResponseDto>.Failure(
-                    new Error("FileStorage.InvalidRequest", "ObjectName is required"));
-            }
+        _logger.LogInformation(
+            "Successfully generated presigned download URL for object: {ObjectName}, expires at: {ExpiresAt}",
+            request.ObjectName, expiresAt);
 
-            // Generate presigned URL for download (expires in 60 minutes by default)
-            var signedUrl = await _fileStorageService.GeneratePresignedDownloadUrlAsync(
-                request.ObjectName,
-                expiresInMinutes: DefaultExpirationMinutes,
-                cancellationToken);
-
-            var expiresAt = DateTime.UtcNow.AddMinutes(DefaultExpirationMinutes);
-
-            var response = new Response.PreSignedUrlResponseDto
-            {
-                SignedUrl = signedUrl,
-                ObjectName = request.ObjectName,
-                FileName = request.FileName ?? Path.GetFileName(request.ObjectName),
-                ExpiresInMinutes = DefaultExpirationMinutes,
-                ExpiresAt = expiresAt
-            };
-
-            _logger.LogInformation(
-                "Successfully generated presigned download URL for object: {ObjectName}, expires at: {ExpiresAt}",
-                request.ObjectName, expiresAt);
-
-            return Result<Response.PreSignedUrlResponseDto>.Success(response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to generate presigned download URL for ObjectName: {ObjectName}",
-                request.ObjectName);
-
-            return (Result<Response.PreSignedUrlResponseDto>)Result<Response.PreSignedUrlResponseDto>.Failure(
-                new Error("FileStorage.PreSignedUrlGeneration",
-                         $"Failed to generate presigned download URL: {ex.Message}"));
-        }
+        return Result<Response.PreSignedUrlResponseDto>.Success(response);
     }
 }

@@ -20,46 +20,17 @@ public sealed class S3FileStorageService : IFileStorageService
 
     private static readonly Dictionary<string, string> ContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        // Images
-        { ".jpg", "image/jpeg" },
-        { ".jpeg", "image/jpeg" },
-        { ".png", "image/png" },
-        { ".gif", "image/gif" },
-        { ".bmp", "image/bmp" },
-        { ".webp", "image/webp" },
-        { ".svg", "image/svg+xml" },
-        { ".ico", "image/x-icon" },
-        
-        // Documents
-        { ".pdf", "application/pdf" },
-        { ".doc", "application/msword" },
-        { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
-        { ".xls", "application/vnd.ms-excel" },
-        { ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
-        { ".ppt", "application/vnd.ms-powerpoint" },
-        { ".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation" },
-        { ".txt", "text/plain" },
-        { ".csv", "text/csv" },
-        
-        // Videos
-        { ".mp4", "video/mp4" },
-        { ".avi", "video/x-msvideo" },
-        { ".mov", "video/quicktime" },
-        { ".wmv", "video/x-ms-wmv" },
-        { ".flv", "video/x-flv" },
-        { ".webm", "video/webm" },
-        
-        // Audio
-        { ".mp3", "audio/mpeg" },
-        { ".wav", "audio/wav" },
-        { ".ogg", "audio/ogg" },
-        
-        // Archives
-        { ".zip", "application/zip" },
-        { ".rar", "application/x-rar-compressed" },
-        { ".7z", "application/x-7z-compressed" },
-        
-        // Default
+        { ".jpg", "image/jpeg" }, { ".jpeg", "image/jpeg" }, { ".png", "image/png" },
+        { ".gif", "image/gif" }, { ".bmp", "image/bmp" }, { ".webp", "image/webp" },
+        { ".svg", "image/svg+xml" }, { ".ico", "image/x-icon" }, { ".pdf", "application/pdf" },
+        { ".doc", "application/msword" }, { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+        { ".xls", "application/vnd.ms-excel" }, { ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+        { ".ppt", "application/vnd.ms-powerpoint" }, { ".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation" },
+        { ".txt", "text/plain" }, { ".csv", "text/csv" }, { ".mp4", "video/mp4" },
+        { ".avi", "video/x-msvideo" }, { ".mov", "video/quicktime" }, { ".wmv", "video/x-ms-wmv" },
+        { ".flv", "video/x-flv" }, { ".webm", "video/webm" }, { ".mp3", "audio/mpeg" },
+        { ".wav", "audio/wav" }, { ".ogg", "audio/ogg" }, { ".zip", "application/zip" },
+        { ".rar", "application/x-rar-compressed" }, { ".7z", "application/x-7z-compressed" },
         { "", "application/octet-stream" }
     };
 
@@ -78,102 +49,70 @@ public sealed class S3FileStorageService : IFileStorageService
         string contentType,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(objectName))
-            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+        ValidateObjectName(objectName);
+        ValidateContentType(contentType);
 
-        if (string.IsNullOrWhiteSpace(contentType))
-            throw new ArgumentException("Content type cannot be null or empty", nameof(contentType));
+        _logger.LogInformation(
+            "Initiating multipart upload. ObjectName: {ObjectName}, ContentType: {ContentType}",
+            objectName, contentType);
 
-        try
+        var request = new InitiateMultipartUploadRequest
         {
-            _logger.LogInformation(
-                "Initiating multipart upload. ObjectName: {ObjectName}, ContentType: {ContentType}",
-                objectName, contentType);
+            BucketName = _options.BucketName,
+            Key = objectName,
+            ContentType = contentType,
+            Metadata = { ["initiated-at"] = DateTime.UtcNow.ToString("O") }
+        };
 
-            var request = new InitiateMultipartUploadRequest
-            {
-                BucketName = _options.BucketName,
-                Key = objectName,
-                ContentType = contentType,
-                // Add metadata for tracking
-                Metadata =
-                {
-                    ["initiated-at"] = DateTime.UtcNow.ToString("O")
-                }
-            };
+        var response = await _s3Client.InitiateMultipartUploadAsync(request, cancellationToken);
 
-            var response = await _s3Client.InitiateMultipartUploadAsync(request, cancellationToken);
+        _logger.LogInformation(
+            "Multipart upload initiated successfully. UploadId: {UploadId}, ObjectName: {ObjectName}",
+            response.UploadId, objectName);
 
-            _logger.LogInformation(
-                "Multipart upload initiated successfully. UploadId: {UploadId}, ObjectName: {ObjectName}",
-                response.UploadId, objectName);
-
-            return response.UploadId;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to initiate multipart upload. ObjectName: {ObjectName}",
-                objectName);
-            throw;
-        }
+        return response.UploadId;
     }
 
-    public async Task<string>   GeneratePresignedUrlForPartAsync(
+    public async Task<string> GeneratePresignedUrlForPartAsync(
         string objectName,
         string uploadId,
         int partNumber,
         int expiresInMinutes = 60,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(objectName))
-            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
-
+        ValidateObjectName(objectName);
         if (string.IsNullOrWhiteSpace(uploadId))
             throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
-
         if (partNumber < 1 || partNumber > 10000)
             throw new ArgumentException("Part number must be between 1 and 10000", nameof(partNumber));
-
-        if (expiresInMinutes <= 0 || expiresInMinutes > 10080) // Max 7 days
+        if (expiresInMinutes <= 0 || expiresInMinutes > 10080)
             throw new ArgumentException("Expiration time must be between 1 and 10080 minutes", nameof(expiresInMinutes));
 
-        try
-        {
-            _logger.LogInformation(
-                "Generating presigned URL for multipart upload part. ObjectName: {ObjectName}, UploadId: {UploadId}, PartNumber: {PartNumber}",
-                objectName, uploadId, partNumber);
+        _logger.LogInformation(
+            "Generating presigned URL for multipart upload part. ObjectName: {ObjectName}, UploadId: {UploadId}, PartNumber: {PartNumber}",
+            objectName, uploadId, partNumber);
 
-            var request = new GetPreSignedUrlRequest
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _options.BucketName,
+            Key = objectName,
+            Verb = HttpVerb.PUT,
+            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
+            Protocol = Protocol.HTTPS,
+            Parameters =
             {
-                BucketName = _options.BucketName,
-                Key = objectName,
-                Verb = HttpVerb.PUT,
-                Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
-                Protocol = Protocol.HTTPS,
-                // Add query parameters for multipart upload
-                Parameters =
-                {
-                    ["uploadId"] = uploadId,
-                    ["partNumber"] = partNumber.ToString()
-                }
-            };
+                ["uploadId"] = uploadId,
+                ["partNumber"] = partNumber.ToString()
+            }
+        };
 
-            var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
+        var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
 
-            _logger.LogInformation(
-                "Generated presigned URL for part {PartNumber}. Expires in: {Minutes} minutes",
-                partNumber, expiresInMinutes);
+        _logger.LogInformation(
+            "Generated presigned URL for part {PartNumber}. Expires in: {Minutes} minutes",
+            partNumber, expiresInMinutes);
 
-            return presignedUrl;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to generate presigned URL for part. ObjectName: {ObjectName}, UploadId: {UploadId}, PartNumber: {PartNumber}",
-                objectName, uploadId, partNumber);
-            throw;
-        }
+        return presignedUrl;
     }
 
     public async Task<string> UploadFileAsync(
@@ -182,63 +121,40 @@ public sealed class S3FileStorageService : IFileStorageService
         string contentType,
         CancellationToken cancellationToken = default)
     {
-        if (file == null || file.Length == 0)
-            throw new ArgumentException("File cannot be null or empty", nameof(file));
+        ValidateFile(file);
+        ValidateObjectName(objectName);
+        ValidateContentType(contentType);
 
-        if (string.IsNullOrWhiteSpace(objectName))
-            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+        _logger.LogInformation(
+            "Starting direct upload to S3. ObjectName: {ObjectName}, FileName: {FileName}, FileSize: {FileSize} bytes",
+            objectName, file.FileName, file.Length);
 
-        if (string.IsNullOrWhiteSpace(contentType))
-            throw new ArgumentException("Content type cannot be null or empty", nameof(contentType));
-
-        try
+        using var stream = file.OpenReadStream();
+        var putRequest = new PutObjectRequest
         {
-            _logger.LogInformation(
-                "Starting direct upload to S3. ObjectName: {ObjectName}, FileName: {FileName}, FileSize: {FileSize} bytes",
-                objectName, file.FileName, file.Length);
-
-            // Create the PutObject request
-            using var stream = file.OpenReadStream();
-            var putRequest = new PutObjectRequest
+            BucketName = _options.BucketName,
+            Key = objectName,
+            InputStream = stream,
+            ContentType = contentType,
+            AutoCloseStream = false,
+            Metadata =
             {
-                BucketName = _options.BucketName,
-                Key = objectName,
-                InputStream = stream,
-                ContentType = contentType,
-                AutoCloseStream = false,
-                // Set metadata
-                Metadata =
-                {
-                    ["original-filename"] = file.FileName,
-                    ["uploaded-at"] = DateTime.UtcNow.ToString("O")
-                }
-            };
-
-            // Upload the file
-            var response = await _s3Client.PutObjectAsync(putRequest, cancellationToken);
-
-            // Verify upload success
-            if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new InvalidOperationException(
-                    $"Failed to upload file to S3. Status code: {response.HttpStatusCode}");
+                ["original-filename"] = file.FileName,
+                ["uploaded-at"] = DateTime.UtcNow.ToString("O")
             }
+        };
 
-            _logger.LogInformation(
-                "Successfully uploaded file to S3. ObjectName: {ObjectName}, ETag: {ETag}",
-                objectName, response.ETag);
+        var response = await _s3Client.PutObjectAsync(putRequest, cancellationToken);
 
-            // Return the object URL (public URL format)
-            var objectUrl = $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{objectName}";
-            return objectUrl;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to upload file to S3. ObjectName: {ObjectName}, FileName: {FileName}",
-                objectName, file.FileName);
-            throw;
-        }
+        if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+            throw new InvalidOperationException(
+                $"Failed to upload file to S3. Status code: {response.HttpStatusCode}");
+
+        _logger.LogInformation(
+            "Successfully uploaded file to S3. ObjectName: {ObjectName}, ETag: {ETag}",
+            objectName, response.ETag);
+
+        return $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{objectName}";
     }
 
     public async Task<string> UploadFileWithProgressAsync(
@@ -248,65 +164,44 @@ public sealed class S3FileStorageService : IFileStorageService
         Action<long, long> progressCallback,
         CancellationToken cancellationToken = default)
     {
-        if (file == null || file.Length == 0)
-            throw new ArgumentException("File cannot be null or empty", nameof(file));
+        ValidateFile(file);
+        ValidateObjectName(objectName);
+        ValidateContentType(contentType);
 
-        if (string.IsNullOrWhiteSpace(objectName))
-            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+        _logger.LogInformation(
+            "Starting upload with progress tracking. ObjectName: {ObjectName}, FileSize: {FileSize} bytes",
+            objectName, file.Length);
 
-        if (string.IsNullOrWhiteSpace(contentType))
-            throw new ArgumentException("Content type cannot be null or empty", nameof(contentType));
+        using var transferUtility = new TransferUtility(_s3Client);
+        using var stream = file.OpenReadStream();
 
-        try
+        var uploadRequest = new TransferUtilityUploadRequest
         {
-            _logger.LogInformation(
-                "Starting upload with progress tracking. ObjectName: {ObjectName}, FileSize: {FileSize} bytes",
-                objectName, file.Length);
-
-            // Create TransferUtility for efficient uploads with progress tracking
-            using var transferUtility = new TransferUtility(_s3Client);
-            using var stream = file.OpenReadStream();
-
-            var uploadRequest = new TransferUtilityUploadRequest
+            BucketName = _options.BucketName,
+            Key = objectName,
+            InputStream = stream,
+            ContentType = contentType,
+            AutoCloseStream = false,
+            PartSize = 6 * 1024 * 1024,
+            Metadata =
             {
-                BucketName = _options.BucketName,
-                Key = objectName,
-                InputStream = stream,
-                ContentType = contentType,
-                AutoCloseStream = false,
-                PartSize = 6 * 1024 * 1024, // 6MB parts for multipart upload
-                // Add metadata
-                Metadata =
-                {
-                    ["original-filename"] = file.FileName,
-                    ["uploaded-at"] = DateTime.UtcNow.ToString("O")
-                }
-            };
+                ["original-filename"] = file.FileName,
+                ["uploaded-at"] = DateTime.UtcNow.ToString("O")
+            }
+        };
 
-            // Attach progress event handler
-            uploadRequest.UploadProgressEvent += (sender, args) =>
-            {
-                progressCallback?.Invoke(args.TransferredBytes, args.TotalBytes);
-            };
-
-            // Perform the upload
-            await transferUtility.UploadAsync(uploadRequest, cancellationToken);
-
-            _logger.LogInformation(
-                "Successfully uploaded file with progress tracking. ObjectName: {ObjectName}",
-                objectName);
-
-            // Return the object URL
-            var objectUrl = $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{objectName}";
-            return objectUrl;
-        }
-        catch (Exception ex)
+        uploadRequest.UploadProgressEvent += (sender, args) =>
         {
-            _logger.LogError(ex,
-                "Failed to upload file with progress tracking. ObjectName: {ObjectName}",
-                objectName);
-            throw;
-        }
+            progressCallback?.Invoke(args.TransferredBytes, args.TotalBytes);
+        };
+
+        await transferUtility.UploadAsync(uploadRequest, cancellationToken);
+
+        _logger.LogInformation(
+            "Successfully uploaded file with progress tracking. ObjectName: {ObjectName}",
+            objectName);
+
+        return $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{objectName}";
     }
 
     public async Task<string> GeneratePresignedUploadUrlAsync(
@@ -315,39 +210,27 @@ public sealed class S3FileStorageService : IFileStorageService
         int expiresInMinutes = 60,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(objectName))
-            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
-
-        if (string.IsNullOrWhiteSpace(contentType))
-            throw new ArgumentException("Content type cannot be null or empty", nameof(contentType));
-
-        if (expiresInMinutes <= 0 || expiresInMinutes > 10080) // Max 7 days
+                ValidateObjectName(objectName);
+        ValidateContentType(contentType);
+        if (expiresInMinutes <= 0 || expiresInMinutes > 10080)
             throw new ArgumentException("Expiration time must be between 1 and 10080 minutes", nameof(expiresInMinutes));
 
-        try
+        var request = new GetPreSignedUrlRequest
         {
-            var request = new GetPreSignedUrlRequest
-            {
-                BucketName = _options.BucketName,
-                Key = objectName,
-                Verb = HttpVerb.PUT,
-                Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
-                ContentType = contentType
-            };
+            BucketName = _options.BucketName,
+            Key = objectName,
+            Verb = HttpVerb.PUT,
+            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
+            ContentType = contentType
+        };
 
-            var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
+        var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
 
-            _logger.LogInformation(
-                "Generated presigned upload URL for object: {ObjectName}, ContentType: {ContentType}, Expires in: {Minutes} minutes",
-                objectName, contentType, expiresInMinutes);
+        _logger.LogInformation(
+            "Generated presigned upload URL for object: {ObjectName}, ContentType: {ContentType}, Expires in: {Minutes} minutes",
+            objectName, contentType, expiresInMinutes);
 
-            return presignedUrl;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to generate presigned upload URL for object: {ObjectName}", objectName);
-            throw;
-        }
+        return presignedUrl;
     }
 
     public async Task<string> GeneratePresignedDownloadUrlAsync(
@@ -355,35 +238,25 @@ public sealed class S3FileStorageService : IFileStorageService
         int expiresInMinutes = 60,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(objectName))
-            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
-
-        if (expiresInMinutes <= 0 || expiresInMinutes > 10080) // Max 7 days
+        ValidateObjectName(objectName);
+        if (expiresInMinutes <= 0 || expiresInMinutes > 10080)
             throw new ArgumentException("Expiration time must be between 1 and 10080 minutes", nameof(expiresInMinutes));
 
-        try
+        var request = new GetPreSignedUrlRequest
         {
-            var request = new GetPreSignedUrlRequest
-            {
-                BucketName = _options.BucketName,
-                Key = objectName,
-                Verb = HttpVerb.GET,
-                Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes)
-            };
+            BucketName = _options.BucketName,
+            Key = objectName,
+            Verb = HttpVerb.GET,
+            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes)
+        };
 
-            var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
+        var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
 
-            _logger.LogInformation(
-                "Generated presigned download URL for object: {ObjectName}, Expires in: {Minutes} minutes",
-                objectName, expiresInMinutes);
+        _logger.LogInformation(
+            "Generated presigned download URL for object: {ObjectName}, Expires in: {Minutes} minutes",
+            objectName, expiresInMinutes);
 
-            return presignedUrl;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to generate presigned download URL for object: {ObjectName}", objectName);
-            throw;
-        }
+        return presignedUrl;
     }
 
     public async Task<CompleteMultipartUploadResponse> CompleteMultipartUploadAsync(
@@ -392,54 +265,37 @@ public sealed class S3FileStorageService : IFileStorageService
         List<PartETag> partETags,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(objectName))
-            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
-
+        ValidateObjectName(objectName);
         if (string.IsNullOrWhiteSpace(uploadId))
             throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
-
         if (partETags == null || partETags.Count == 0)
             throw new ArgumentException("Part ETags list cannot be null or empty", nameof(partETags));
 
-        try
+        _logger.LogInformation(
+            "Completing multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}, TotalParts: {TotalParts}",
+            objectName, uploadId, partETags.Count);
+
+        var sortedPartETags = partETags.OrderBy(p => p.PartNumber).ToList();
+
+        var request = new CompleteMultipartUploadRequest
         {
-            _logger.LogInformation(
-                "Completing multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}, TotalParts: {TotalParts}",
-                objectName, uploadId, partETags.Count);
+            BucketName = _options.BucketName,
+            Key = objectName,
+            UploadId = uploadId,
+            PartETags = sortedPartETags
+        };
 
-            // Sort parts by part number to ensure correct order
-            var sortedPartETags = partETags.OrderBy(p => p.PartNumber).ToList();
+        var response = await _s3Client.CompleteMultipartUploadAsync(request, cancellationToken);
 
-            var request = new CompleteMultipartUploadRequest
-            {
-                BucketName = _options.BucketName,
-                Key = objectName,
-                UploadId = uploadId,
-                PartETags = sortedPartETags
-            };
+        if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+            throw new InvalidOperationException(
+                $"Failed to complete multipart upload. Status code: {response.HttpStatusCode}");
 
-            var response = await _s3Client.CompleteMultipartUploadAsync(request, cancellationToken);
+        _logger.LogInformation(
+            "Multipart upload completed successfully. ObjectName: {ObjectName}, UploadId: {UploadId}, ETag: {ETag}, Location: {Location}",
+            objectName, uploadId, response.ETag, response.Location);
 
-            // Verify completion success
-            if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new InvalidOperationException(
-                    $"Failed to complete multipart upload. Status code: {response.HttpStatusCode}");
-            }
-
-            _logger.LogInformation(
-                "Multipart upload completed successfully. ObjectName: {ObjectName}, UploadId: {UploadId}, ETag: {ETag}, Location: {Location}",
-                objectName, uploadId, response.ETag, response.Location);
-
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to complete multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}",
-                objectName, uploadId);
-            throw;
-        }
+        return response;
     }
 
     public async Task AbortMultipartUploadAsync(
@@ -447,46 +303,33 @@ public sealed class S3FileStorageService : IFileStorageService
         string uploadId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(objectName))
-            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
-
+        ValidateObjectName(objectName);
         if (string.IsNullOrWhiteSpace(uploadId))
             throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
 
-        try
+        _logger.LogInformation(
+            "Aborting multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}",
+            objectName, uploadId);
+
+        var request = new AbortMultipartUploadRequest
         {
-            _logger.LogInformation(
-                "Aborting multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}",
-                objectName, uploadId);
+            BucketName = _options.BucketName,
+            Key = objectName,
+            UploadId = uploadId
+        };
 
-            var request = new AbortMultipartUploadRequest
-            {
-                BucketName = _options.BucketName,
-                Key = objectName,
-                UploadId = uploadId
-            };
+        var response = await _s3Client.AbortMultipartUploadAsync(request, cancellationToken);
 
-            var response = await _s3Client.AbortMultipartUploadAsync(request, cancellationToken);
-
-            // Verify abort success
-            if (response.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
-            {
-                _logger.LogWarning(
-                    "Multipart upload abort returned unexpected status code: {StatusCode}",
-                    response.HttpStatusCode);
-            }
-
-            _logger.LogInformation(
-                "Multipart upload aborted successfully. ObjectName: {ObjectName}, UploadId: {UploadId}",
-                objectName, uploadId);
-        }
-        catch (Exception ex)
+        if (response.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
         {
-            _logger.LogError(ex,
-                "Failed to abort multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}",
-                objectName, uploadId);
-            throw;
+            _logger.LogWarning(
+                "Multipart upload abort returned unexpected status code: {StatusCode}",
+                response.HttpStatusCode);
         }
+
+        _logger.LogInformation(
+            "Multipart upload aborted successfully. ObjectName: {ObjectName}, UploadId: {UploadId}",
+            objectName, uploadId);
     }
 
     public string GenerateObjectName(string appServiceName, string fileName, string uploadingProgressId)
@@ -494,19 +337,13 @@ public sealed class S3FileStorageService : IFileStorageService
         if (string.IsNullOrWhiteSpace(fileName))
             throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
 
-        // Sanitize inputs
         var sanitizedAppServiceName = SanitizePath(appServiceName ?? "Default");
         var sanitizedProgressId = SanitizePath(uploadingProgressId ?? Guid.NewGuid().ToString());
-        
-        // Extract file extension
         var extension = Path.GetExtension(fileName);
         var fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
         var sanitizedFileName = SanitizeFileName(fileNameWithoutExt);
-
-        // Generate unique object name with structure: appServiceName/uploadingProgressId/timestamp_filename.ext
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var uniqueFileName = $"{timestamp}_{sanitizedFileName}{extension}";
-        
         var objectName = $"{sanitizedAppServiceName}/{sanitizedProgressId}/{uniqueFileName}";
 
         _logger.LogDebug("Generated object name: {ObjectName} from fileName: {FileName}", objectName, fileName);
@@ -520,10 +357,28 @@ public sealed class S3FileStorageService : IFileStorageService
             return ContentTypes[""];
 
         var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        
+
         return ContentTypes.TryGetValue(extension, out var contentType)
             ? contentType
             : ContentTypes[""];
+    }
+
+    private static void ValidateObjectName(string objectName)
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+    }
+
+    private static void ValidateContentType(string contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("Content type cannot be null or empty", nameof(contentType));
+    }
+
+    private static void ValidateFile(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            throw new ArgumentException("File cannot be null or empty", nameof(file));
     }
 
     private static string SanitizePath(string path)
@@ -531,16 +386,12 @@ public sealed class S3FileStorageService : IFileStorageService
         if (string.IsNullOrWhiteSpace(path))
             return "default";
 
-        // Remove invalid characters for S3 paths
         var invalidChars = new[] { '\\', '<', '>', ':', '"', '|', '?', '*' };
         var sanitized = path;
 
         foreach (var c in invalidChars)
-        {
             sanitized = sanitized.Replace(c, '_');
-        }
 
-        // Remove leading/trailing slashes and spaces
         return sanitized.Trim('/', ' ');
     }
 
@@ -549,16 +400,12 @@ public sealed class S3FileStorageService : IFileStorageService
         if (string.IsNullOrWhiteSpace(fileName))
             return "file";
 
-        // Remove invalid characters
         var invalidChars = Path.GetInvalidFileNameChars();
         var sanitized = fileName;
 
         foreach (var c in invalidChars)
-        {
             sanitized = sanitized.Replace(c, '_');
-        }
 
-        // Replace spaces with underscores
         sanitized = sanitized.Replace(' ', '_');
 
         return sanitized;

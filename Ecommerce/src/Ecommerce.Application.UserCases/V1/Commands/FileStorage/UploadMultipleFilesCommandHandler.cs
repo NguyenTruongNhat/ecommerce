@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Ecommerce.Application.Abstractions;
 using Ecommerce.Contract.Abstractions.Message;
@@ -38,6 +38,17 @@ public sealed class UploadMultipleFilesCommandHandler
     {
         var stopwatch = Stopwatch.StartNew();
         var startedAt = DateTime.UtcNow;
+
+        _logger.LogInformation(
+            "Starting multiple file upload. UploadingProgressId: {ProgressId}, AppServiceName: {AppServiceName}, FilesCount: {Count}",
+            request.UploadingProgressId, request.AppServiceName, request.Files?.Count ?? 0);
+
+        // Business validation
+        var validationResult = ValidateRequest(request);
+        if (validationResult.IsFailure)
+        {
+            return Result<Response.UploadMultipleFilesResponseDto>.Failure(validationResult.Error);
+        }
 
         // Thread-safe collection for upload results
         var results = new ConcurrentBag<Response.FileUploadResultDto>();
@@ -120,51 +131,88 @@ public sealed class UploadMultipleFilesCommandHandler
             FileSize = file.Length
         };
 
-        // Upload logic
-        var objectName = _fileStorageService.GenerateObjectName(
-            appServiceName,
-            file.FileName,
-            uploadingProgressId);
-
-        result.ObjectName = objectName;
-
-        var contentType = _fileStorageService.GetContentType(file.FileName);
-        result.ContentType = contentType;
-
-        var objectUrl = await _fileStorageService.UploadFileWithProgressAsync(
-            file,
-            objectName,
-            contentType,
-            (transferred, total) =>
-            {
-                // Report progress via SignalR (non-blocking)
-                _ = ReportProgressAsync(
-                    uploadingProgressId,
-                    file.FileName,
-                    fileIndex,
-                    totalFiles,
-                    transferred,
-                    total,
-                    "uploading",
-                    cancellationToken);
-            },
-            cancellationToken);
-
-        result.DownloadUrl = await _fileStorageService.GeneratePresignedDownloadUrlAsync(
-            objectName,
-            expiresInMinutes: 10080, // 7 days
-            cancellationToken);
-
-        result.IsSuccess = true;
-
-        // Report completion for this file
-        await ReportProgressAsync(
-            uploadingProgressId, file.FileName, fileIndex, totalFiles,
-            file.Length, file.Length, "completed", cancellationToken);
-
         _logger.LogInformation(
-            "Successfully uploaded file {Index}/{Total}: {FileName} -> {ObjectName}",
-            fileIndex + 1, totalFiles, file.FileName, objectName);
+            "Uploading file {Index}/{Total}: {FileName} ({Size} bytes)",
+            fileIndex + 1, totalFiles, file.FileName, file.Length);
+
+        // Business validation for individual file
+        var validationError = ValidateFile(file);
+        if (validationError != null)
+        {
+            result.IsSuccess = false;
+            result.ErrorMessage = validationError;
+
+            await ReportProgressAsync(
+                uploadingProgressId, file.FileName, fileIndex, totalFiles,
+                0, file.Length, "failed", cancellationToken);
+
+            return result;
+        }
+
+        try
+        {
+            // Generate object name
+            var objectName = _fileStorageService.GenerateObjectName(
+                appServiceName,
+                file.FileName,
+                uploadingProgressId);
+
+            result.ObjectName = objectName;
+
+            // Determine content type
+            var contentType = _fileStorageService.GetContentType(file.FileName);
+            result.ContentType = contentType;
+
+            // Upload with progress tracking
+            var objectUrl = await _fileStorageService.UploadFileWithProgressAsync(
+                file,
+                objectName,
+                contentType,
+                (transferred, total) =>
+                {
+                    // Report progress via SignalR (non-blocking)
+                    _ = ReportProgressAsync(
+                        uploadingProgressId,
+                        file.FileName,
+                        fileIndex,
+                        totalFiles,
+                        transferred,
+                        total,
+                        "uploading",
+                        cancellationToken);
+                },
+                cancellationToken);
+
+            // Generate download URL
+            result.DownloadUrl = await _fileStorageService.GeneratePresignedDownloadUrlAsync(
+                objectName,
+                expiresInMinutes: 10080, // 7 days
+                cancellationToken);
+
+            result.IsSuccess = true;
+
+            // Report completion for this file
+            await ReportProgressAsync(
+                uploadingProgressId, file.FileName, fileIndex, totalFiles,
+                file.Length, file.Length, "completed", cancellationToken);
+
+            _logger.LogInformation(
+                "Successfully uploaded file {Index}/{Total}: {FileName} -> {ObjectName}",
+                fileIndex + 1, totalFiles, file.FileName, objectName);
+        }
+        catch (Exception ex)
+        {
+            result.IsSuccess = false;
+            result.ErrorMessage = ex.Message;
+
+            _logger.LogError(ex,
+                "Failed to upload file {Index}/{Total}: {FileName}",
+                fileIndex + 1, totalFiles, file.FileName);
+
+            await ReportProgressAsync(
+                uploadingProgressId, file.FileName, fileIndex, totalFiles,
+                0, file.Length, "failed", cancellationToken);
+        }
 
         return result;
     }
@@ -207,5 +255,57 @@ public sealed class UploadMultipleFilesCommandHandler
             // Don't fail the upload if progress reporting fails
             _logger.LogWarning(ex, "Failed to report progress for file: {FileName}", fileName);
         }
+    }
+
+    /// <summary>
+    /// Validates the upload request
+    /// </summary>
+    private Result ValidateRequest(Command.UploadMultipleFilesCommand request)
+    {
+        if (request.Files == null || request.Files.Count == 0)
+        {
+            _logger.LogWarning("Validation failed: No files provided");
+            return Result.Failure(
+                new Error("FileStorage.NoFiles", "At least one file must be provided"));
+        }
+
+        if (request.Files.Count > 20) // Limit to 20 files per request
+        {
+            _logger.LogWarning("Validation failed: Too many files ({Count})", request.Files.Count);
+            return Result.Failure(
+                new Error("FileStorage.TooManyFiles", "Maximum 20 files allowed per upload"));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.UploadingProgressId))
+        {
+            _logger.LogWarning("Validation failed: UploadingProgressId is required");
+            return Result.Failure(
+                new Error("FileStorage.InvalidProgressId", "UploadingProgressId is required"));
+        }
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Validates a single file
+    /// </summary>
+    private string? ValidateFile(Microsoft.AspNetCore.Http.IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return "File is empty";
+        }
+
+        if (file.Length > MaxFileSizeInBytes)
+        {
+            return $"File size exceeds maximum allowed size of {MaxFileSizeInBytes / 1024 / 1024}MB";
+        }
+
+        if (string.IsNullOrWhiteSpace(file.FileName))
+        {
+            return "File name is required";
+        }
+
+        return null; // Valid
     }
 }
