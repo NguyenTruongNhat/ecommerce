@@ -29,8 +29,7 @@ public class FileStorageController : ApiController
         return Ok(result);
     }
 
-    
-
+    #region Multi part upload
     [HttpGet]
     [Route("multipart-upload-id")]
     public async Task<IActionResult> CeateMultipartUpload([FromQuery] Command.CreateMultipartUploadCommand request)
@@ -66,6 +65,8 @@ public class FileStorageController : ApiController
         var result = await Sender.Send(request);
         return Ok(result);
     }
+    #endregion
+
     #region upload-signed-url
     [HttpGet]
     [Route("upload-signed-url")]
