@@ -73,6 +73,109 @@ public sealed class S3FileStorageService : IFileStorageService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    public async Task<string> InitiateMultipartUploadAsync(
+        string objectName,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("Content type cannot be null or empty", nameof(contentType));
+
+        try
+        {
+            _logger.LogInformation(
+                "Initiating multipart upload. ObjectName: {ObjectName}, ContentType: {ContentType}",
+                objectName, contentType);
+
+            var request = new InitiateMultipartUploadRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectName,
+                ContentType = contentType,
+                // Add metadata for tracking
+                Metadata =
+                {
+                    ["initiated-at"] = DateTime.UtcNow.ToString("O")
+                }
+            };
+
+            var response = await _s3Client.InitiateMultipartUploadAsync(request, cancellationToken);
+
+            _logger.LogInformation(
+                "Multipart upload initiated successfully. UploadId: {UploadId}, ObjectName: {ObjectName}",
+                response.UploadId, objectName);
+
+            return response.UploadId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to initiate multipart upload. ObjectName: {ObjectName}",
+                objectName);
+            throw;
+        }
+    }
+
+    public async Task<string> GeneratePresignedUrlForPartAsync(
+        string objectName,
+        string uploadId,
+        int partNumber,
+        int expiresInMinutes = 60,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+
+        if (string.IsNullOrWhiteSpace(uploadId))
+            throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
+
+        if (partNumber < 1 || partNumber > 10000)
+            throw new ArgumentException("Part number must be between 1 and 10000", nameof(partNumber));
+
+        if (expiresInMinutes <= 0 || expiresInMinutes > 10080) // Max 7 days
+            throw new ArgumentException("Expiration time must be between 1 and 10080 minutes", nameof(expiresInMinutes));
+
+        try
+        {
+            _logger.LogInformation(
+                "Generating presigned URL for multipart upload part. ObjectName: {ObjectName}, UploadId: {UploadId}, PartNumber: {PartNumber}",
+                objectName, uploadId, partNumber);
+
+            var request = new GetPreSignedUrlRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectName,
+                Verb = HttpVerb.PUT,
+                Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
+                Protocol = Protocol.HTTPS,
+                // Add query parameters for multipart upload
+                Parameters =
+                {
+                    ["uploadId"] = uploadId,
+                    ["partNumber"] = partNumber.ToString()
+                }
+            };
+
+            var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
+
+            _logger.LogInformation(
+                "Generated presigned URL for part {PartNumber}. Expires in: {Minutes} minutes",
+                partNumber, expiresInMinutes);
+
+            return presignedUrl;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to generate presigned URL for part. ObjectName: {ObjectName}, UploadId: {UploadId}, PartNumber: {PartNumber}",
+                objectName, uploadId, partNumber);
+            throw;
+        }
+    }
+
     public async Task<string> UploadFileAsync(
         IFormFile file,
         string objectName,

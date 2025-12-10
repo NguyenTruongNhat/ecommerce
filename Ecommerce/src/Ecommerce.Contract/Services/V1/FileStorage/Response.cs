@@ -82,4 +82,24 @@ public static class Response
         public double PercentComplete { get; set; }
         public string Status { get; set; } // "uploading", "completed", "failed"
     }
+
+    public record InitiateMultipartUploadResponseDto
+    {
+        public string UploadId { get; set; }
+        public string ObjectName { get; set; }
+        public string FileName { get; set; }
+        public string ContentType { get; set; }
+        public string FileType { get; set; }
+        public DateTime InitiatedAt { get; set; }
+    }
+
+    public record MultipartUploadSignedUrlResponseDto
+    {
+        public string SignedUrl { get; set; }
+        public string UploadId { get; set; }
+        public string ObjectName { get; set; }
+        public int PartNumber { get; set; }
+        public int ExpiresInMinutes { get; set; }
+        public DateTime ExpiresAt { get; set; }
+    }
 }

@@ -47,6 +47,34 @@ public interface IFileStorageService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Initiates a multipart upload and returns the upload ID
+    /// </summary>
+    /// <param name="objectName">The unique name/key of the object in storage</param>
+    /// <param name="contentType">The MIME type of the file</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Upload ID for the multipart upload session</returns>
+    Task<string> InitiateMultipartUploadAsync(
+        string objectName,
+        string contentType,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates a presigned URL for uploading a specific part in a multipart upload
+    /// </summary>
+    /// <param name="objectName">The unique name/key of the object in storage</param>
+    /// <param name="uploadId">The upload ID from InitiateMultipartUpload</param>
+    /// <param name="partNumber">The part number (1-indexed, max 10000)</param>
+    /// <param name="expiresInMinutes">URL expiration time in minutes</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Presigned URL for uploading the part</returns>
+    Task<string> GeneratePresignedUrlForPartAsync(
+        string objectName,
+        string uploadId,
+        int partNumber,
+        int expiresInMinutes = 60,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Generates a pre-signed URL for uploading a file
     /// </summary>
     /// <param name="objectName">The unique name/key of the object in storage</param>

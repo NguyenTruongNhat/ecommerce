@@ -30,11 +30,11 @@ public static class Command
     {
     }
 
-    public record CreateMultipartUploadCommand : BaseUploadFileDto , ICommand
+    public record CreateMultipartUploadCommand : BaseUploadFileDto, ICommand<Response.InitiateMultipartUploadResponseDto>
     {
     }
 
-    public record CreateMultipartUploadSignedUrlCommand : BaseUploadFileDto, ICommand<Response.CreateMultipartUploadResponseDto>
+    public record CreateMultipartUploadSignedUrlCommand : BaseUploadFileDto, ICommand<Response.MultipartUploadSignedUrlResponseDto>
     {
         public int PartNumber { get; set; }
         public string UploadId { get; set; }
