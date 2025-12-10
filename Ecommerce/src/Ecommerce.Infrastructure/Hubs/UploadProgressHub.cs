@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 
-namespace Ecommerce.Presentation.Hubs;
+namespace Ecommerce.Infrastructure.Hubs;
 
 /// <summary>
 /// SignalR Hub for broadcasting file upload progress to connected clients

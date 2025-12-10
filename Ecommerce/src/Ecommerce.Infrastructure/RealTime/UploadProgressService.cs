@@ -1,6 +1,6 @@
 using Ecommerce.Application.Abstractions;
 using Ecommerce.Contract.Services.V1.FileStorage;
-using Ecommerce.Presentation.Hubs;
+using Ecommerce.Infrastructure.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
