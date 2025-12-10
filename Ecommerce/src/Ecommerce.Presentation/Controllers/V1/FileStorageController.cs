@@ -17,10 +17,7 @@ public class FileStorageController : ApiController
     [HttpPost("multiple-upload")]
     public async Task<IActionResult> Upload([FromForm] Command.UploadMultipleFilesCommand request)
     {
-        //var result = await _awsStorageService.UploadMultipleFilesToCloudAsync(request);
         var result = await Sender.Send(request);
-
-
         return Ok(result);
     }
 

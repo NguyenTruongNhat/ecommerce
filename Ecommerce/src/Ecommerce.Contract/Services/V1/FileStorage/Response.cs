@@ -47,4 +47,39 @@ public static class Response
         public string DownloadUrl { get; set; }
         public DateTime UploadedAt { get; set; }
     }
+
+    public record UploadMultipleFilesResponseDto
+    {
+        public string UploadingProgressId { get; set; }
+        public int TotalFiles { get; set; }
+        public int SuccessfulUploads { get; set; }
+        public int FailedUploads { get; set; }
+        public List<FileUploadResultDto> Results { get; set; } = new();
+        public DateTime StartedAt { get; set; }
+        public DateTime CompletedAt { get; set; }
+        public double TotalDurationSeconds { get; set; }
+    }
+
+    public record FileUploadResultDto
+    {
+        public string FileName { get; set; }
+        public string ObjectName { get; set; }
+        public string ContentType { get; set; }
+        public long FileSize { get; set; }
+        public bool IsSuccess { get; set; }
+        public string ErrorMessage { get; set; }
+        public string DownloadUrl { get; set; }
+    }
+
+    public record UploadProgressDto
+    {
+        public string UploadingProgressId { get; set; }
+        public string FileName { get; set; }
+        public int FileIndex { get; set; }
+        public int TotalFiles { get; set; }
+        public long TransferredBytes { get; set; }
+        public long TotalBytes { get; set; }
+        public double PercentComplete { get; set; }
+        public string Status { get; set; } // "uploading", "completed", "failed"
+    }
 }

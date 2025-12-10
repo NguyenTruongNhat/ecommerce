@@ -14,7 +14,7 @@ public record BaseUploadFileDto(
 
 public static class Command
 {
-    public record UploadMultipleFilesCommand : BaseUploadFileDto, ICommand
+    public record UploadMultipleFilesCommand : BaseUploadFileDto, ICommand<Response.UploadMultipleFilesResponseDto>
     {
         public List<IFormFile> Files { get; init; } = new();
     }

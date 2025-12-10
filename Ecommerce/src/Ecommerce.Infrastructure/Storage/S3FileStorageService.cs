@@ -1,5 +1,6 @@
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.S3.Transfer;
 using Ecommerce.Application.Abstractions;
 using Ecommerce.Infrastructure.DependencyInjection.Options;
 using Microsoft.AspNetCore.Http;
@@ -133,6 +134,74 @@ public sealed class S3FileStorageService : IFileStorageService
             _logger.LogError(ex,
                 "Failed to upload file to S3. ObjectName: {ObjectName}, FileName: {FileName}",
                 objectName, file.FileName);
+            throw;
+        }
+    }
+
+    public async Task<string> UploadFileWithProgressAsync(
+        IFormFile file,
+        string objectName,
+        string contentType,
+        Action<long, long> progressCallback,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+            throw new ArgumentException("File cannot be null or empty", nameof(file));
+
+        if (string.IsNullOrWhiteSpace(objectName))
+            throw new ArgumentException("Object name cannot be null or empty", nameof(objectName));
+
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("Content type cannot be null or empty", nameof(contentType));
+
+        try
+        {
+            _logger.LogInformation(
+                "Starting upload with progress tracking. ObjectName: {ObjectName}, FileSize: {FileSize} bytes",
+                objectName, file.Length);
+
+            // Create TransferUtility for efficient uploads with progress tracking
+            using var transferUtility = new TransferUtility(_s3Client);
+            using var stream = file.OpenReadStream();
+
+            var uploadRequest = new TransferUtilityUploadRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectName,
+                InputStream = stream,
+                ContentType = contentType,
+                AutoCloseStream = false,
+                PartSize = 6 * 1024 * 1024, // 6MB parts for multipart upload
+                // Add metadata
+                Metadata =
+                {
+                    ["original-filename"] = file.FileName,
+                    ["uploaded-at"] = DateTime.UtcNow.ToString("O")
+                }
+            };
+
+            // Attach progress event handler
+            uploadRequest.UploadProgressEvent += (sender, args) =>
+            {
+                progressCallback?.Invoke(args.TransferredBytes, args.TotalBytes);
+            };
+
+            // Perform the upload
+            await transferUtility.UploadAsync(uploadRequest, cancellationToken);
+
+            _logger.LogInformation(
+                "Successfully uploaded file with progress tracking. ObjectName: {ObjectName}",
+                objectName);
+
+            // Return the object URL
+            var objectUrl = $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{objectName}";
+            return objectUrl;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to upload file with progress tracking. ObjectName: {ObjectName}",
+                objectName);
             throw;
         }
     }

@@ -6,6 +6,7 @@ using Ecommerce.Infrastructure.Authentication;
 using Ecommerce.Infrastructure.Caching;
 using Ecommerce.Infrastructure.DependencyInjection.Options;
 using Ecommerce.Infrastructure.Hashing;
+using Ecommerce.Infrastructure.RealTime;
 using Ecommerce.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddServicesInfrastructure(configuration);
         services.AddRedisInfrastructure(configuration);
         services.AddS3Infrastructure(configuration);
-
+        services.AddSignalRInfrastructure();
     }
 
     public static void AddServicesInfrastructure(this IServiceCollection services, IConfiguration configuration)
@@ -85,6 +86,11 @@ public static class ServiceCollectionExtensions
         // Register File Storage Service
         services.AddScoped<IFileStorageService, S3FileStorageService>();
         #endregion
+    }
 
+    public static void AddSignalRInfrastructure(this IServiceCollection services)
+    {
+        services.AddSignalR();
+        services.AddScoped<IUploadProgressService, UploadProgressService>();
     }
 }

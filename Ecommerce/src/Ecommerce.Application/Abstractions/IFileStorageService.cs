@@ -31,6 +31,22 @@ public interface IFileStorageService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Uploads a file with progress tracking using TransferUtility
+    /// </summary>
+    /// <param name="file">The file to upload</param>
+    /// <param name="objectName">The unique name/key of the object in storage</param>
+    /// <param name="contentType">The MIME type of the file</param>
+    /// <param name="progressCallback">Callback for progress updates</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Upload result with object URL</returns>
+    Task<string> UploadFileWithProgressAsync(
+        IFormFile file,
+        string objectName,
+        string contentType,
+        Action<long, long> progressCallback,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Generates a pre-signed URL for uploading a file
     /// </summary>
     /// <param name="objectName">The unique name/key of the object in storage</param>

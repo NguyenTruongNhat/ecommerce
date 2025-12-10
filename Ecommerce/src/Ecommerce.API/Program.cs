@@ -75,4 +75,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+//app.MapHub<Ecommerce.Presentation.Hubs.UploadProgressHub>("/hubs/upload-progress");
+
 app.Run();

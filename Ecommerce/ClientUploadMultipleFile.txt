@@ -1,0 +1,31 @@
+// Connect to SignalR hub
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/hubs/upload-progress")
+    .build();
+
+// Join the upload session group
+const uploadProgressId = "unique-session-id";
+await connection.start();
+await connection.invoke("JoinUploadGroup", uploadProgressId);
+
+// Listen for progress updates
+connection.on("UploadProgress", (progress) => {
+    console.log(`${progress.fileName}: ${progress.percentComplete}%`);
+    // Update UI progress bar
+});
+
+// Listen for completion
+connection.on("UploadCompleted", (result) => {
+    console.log(`Upload completed: ${result.successCount} succeeded, ${result.failedCount} failed`);
+});
+
+// Upload files
+const formData = new FormData();
+formData.append("appServiceName", "Documents");
+formData.append("uploadingProgressId", uploadProgressId);
+files.forEach(file => formData.append("files", file));
+
+const response = await fetch("/api/v1/filestorage/multiple-upload", {
+    method: "POST",
+    body: formData
+});
