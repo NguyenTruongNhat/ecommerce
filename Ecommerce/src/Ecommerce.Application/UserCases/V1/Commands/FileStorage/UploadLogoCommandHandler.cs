@@ -42,7 +42,7 @@ public sealed class UploadLogoCommandHandler
             var validationResult = ValidateFile(request.File);
             if (validationResult.IsFailure)
             {
-                return Result<Response.UploadLogoResponseDto>.Failure(validationResult.Error);
+                return (Result<Response.UploadLogoResponseDto>)Result<Response.UploadLogoResponseDto>.Failure(validationResult.Error);
             }
 
             // Use the provided filename or fall back to the uploaded file's name
@@ -100,7 +100,7 @@ public sealed class UploadLogoCommandHandler
                 "Failed to upload logo for ResourceId: {ResourceId}",
                 request.ResourceId);
 
-            return Result<Response.UploadLogoResponseDto>.Failure(
+            return (Result<Response.UploadLogoResponseDto>)Result<Response.UploadLogoResponseDto>.Failure(
                 new Error(
                     "FileStorage.UploadFailed",
                     $"Failed to upload logo: {ex.Message}"));
