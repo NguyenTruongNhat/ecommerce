@@ -32,14 +32,7 @@ public class FileStorageController : ApiController
         return Ok(result);
     }
 
-    [HttpGet]
-    [Route("upload-signed-url")]
-    public async Task<IActionResult> GetPreSignedUrlForUpload([FromQuery] Command.CreateUploadSignedUrlCommand request)
-    {
-        //var signedUrl = _awsStorageService.CreateSignedUrlForUpload(dto);
-        var result = await Sender.Send(request);
-        return Ok(result);
-    }
+    
 
     [HttpGet]
     [Route("multipart-upload-id")]
@@ -76,15 +69,23 @@ public class FileStorageController : ApiController
         var result = await Sender.Send(request);
         return Ok(result);
     }
+    #region upload-signed-url
+    [HttpGet]
+    [Route("upload-signed-url")]
+    public async Task<IActionResult> GetPreSignedUrlForUpload([FromQuery] Command.CreateUploadSignedUrlCommand request)
+    {
+        var result = await Sender.Send(request);
+        return Ok(result);
+    }
 
     [HttpGet]
     [Route("signed-url")]
     public async Task<IActionResult> GetPreSignedUrl([FromQuery] Command.PreSignedUrlCommand request)
     {
-        //string signedUrl = _awsStorageService.CreateSignedUrlWithFileName(objectName, fileName);
         var result = await Sender.Send(request);
         return Ok(result);
     }
+    #endregion
 
     [HttpPost]
     [Route("avatar-upload")]

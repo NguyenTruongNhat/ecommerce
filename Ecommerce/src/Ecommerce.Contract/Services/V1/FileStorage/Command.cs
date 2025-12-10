@@ -65,7 +65,7 @@ public static class Command
         public IFormFile File { get; set; }
     }
 
-    public record PreSignedUrlCommand : ICommand
+    public record PreSignedUrlCommand : ICommand<Response.PreSignedUrlResponseDto>
     {
         public string ObjectName { get; set; }
         public string FileName { get; set; }

@@ -28,4 +28,12 @@ public static class Response
         public string ObjectName { get; set; }
     }
 
+    public record PreSignedUrlResponseDto
+    {
+        public string SignedUrl { get; set; }
+        public string ObjectName { get; set; }
+        public string FileName { get; set; }
+        public int ExpiresInMinutes { get; set; }
+        public DateTime ExpiresAt { get; set; }
+    }
 }

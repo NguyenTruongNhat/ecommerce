@@ -6,6 +6,7 @@ using Ecommerce.Infrastructure.Authentication;
 using Ecommerce.Infrastructure.Caching;
 using Ecommerce.Infrastructure.DependencyInjection.Options;
 using Ecommerce.Infrastructure.Hashing;
+using Ecommerce.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -80,6 +81,9 @@ public static class ServiceCollectionExtensions
 
             return client;
         });
+
+        // Register File Storage Service
+        services.AddScoped<IFileStorageService, S3FileStorageService>();
         #endregion
 
     }
