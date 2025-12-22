@@ -96,11 +96,9 @@ public static class Response
     public record MultipartUploadSignedUrlResponseDto
     {
         public string SignedUrl { get; set; }
-        public string UploadId { get; set; }
         public string ObjectName { get; set; }
-        public int PartNumber { get; set; }
-        public int ExpiresInMinutes { get; set; }
-        public DateTime ExpiresAt { get; set; }
+        public string ContentType { get; set; }
+
     }
 
     public record CompleteMultipartUploadResponseDto

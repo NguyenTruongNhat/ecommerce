@@ -1,6 +1,7 @@
 ﻿using Ecommerce.Application.Abstractions;
 using Ecommerce.Contract.Abstractions.Message;
 using Ecommerce.Contract.Abstractions.Shared;
+using Ecommerce.Contract.Helper;
 using Ecommerce.Contract.Services.V1.FileStorage;
 using Microsoft.Extensions.Logging;
 
@@ -31,28 +32,16 @@ public sealed class CreateMultipartUploadSignedUrlCommandHandler
         CancellationToken cancellationToken)
     {
         // Generate presigned URL for this specific part
-        var signedUrl = await _fileStorageService.GeneratePresignedUrlForPartAsync(
-            request.ObjectName,
-            request.UploadId,
-            request.PartNumber,
-            expiresInMinutes: DefaultExpirationMinutes,
-            cancellationToken);
+        var signedUrl = await _fileStorageService.GeneratePresignedUrlForPartAsync(request.ObjectName, request.UploadId, request.PartNumber);
 
         var expiresAt = DateTime.UtcNow.AddMinutes(DefaultExpirationMinutes);
 
         var response = new Response.MultipartUploadSignedUrlResponseDto
         {
             SignedUrl = signedUrl,
-            UploadId = request.UploadId,
             ObjectName = request.ObjectName,
-            PartNumber = request.PartNumber,
-            ExpiresInMinutes = DefaultExpirationMinutes,
-            ExpiresAt = expiresAt
+            ContentType = FileStorageFunctionHelper.GetUploadContentType(request.FileName),
         };
-
-        _logger.LogInformation(
-            "Successfully generated presigned URL for part {PartNumber}/{MaxParts}. UploadId: {UploadId}, Expires at: {ExpiresAt}",
-            request.PartNumber, MaxPartNumber, request.UploadId, expiresAt);
 
         // Log progress for tracking
         LogUploadProgress(request.PartNumber, request.UploadId, request.ObjectName);

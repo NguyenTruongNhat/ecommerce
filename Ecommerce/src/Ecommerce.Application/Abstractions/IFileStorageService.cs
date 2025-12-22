@@ -56,7 +56,6 @@ public interface IFileStorageService
     /// <returns>Upload ID for the multipart upload session</returns>
     Task<string> InitiateMultipartUploadAsync(
         string objectName,
-        string contentType,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -71,9 +70,7 @@ public interface IFileStorageService
     Task<string> GeneratePresignedUrlForPartAsync(
         string objectName,
         string uploadId,
-        int partNumber,
-        int expiresInMinutes = 60,
-        CancellationToken cancellationToken = default);
+        int partNumber);
 
     /// <summary>
     /// Completes a multipart upload by combining all uploaded parts
@@ -111,7 +108,6 @@ public interface IFileStorageService
     Task<string> GeneratePresignedUploadUrlAsync(
         string objectName,
         string contentType,
-        int expiresInMinutes = 60,
         CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -28,20 +28,12 @@ public sealed class CompleteMultipartUploadCommandHandler
         Command.CompleteMultipartUploadCommand request,
         CancellationToken cancellationToken)
     {
-        // Log all parts for debugging
-        LogPartDetails(request.UploadId, request.PartETags);
 
         // Complete the multipart upload in S3
         var s3Response = await _fileStorageService.CompleteMultipartUploadAsync(
             request.ObjectName,
             request.UploadId,
             request.PartETags,
-            cancellationToken);
-
-        // Generate a presigned download URL (valid for 7 days)
-        var downloadUrl = await _fileStorageService.GeneratePresignedDownloadUrlAsync(
-            request.ObjectName,
-            expiresInMinutes: 10080, // 7 days
             cancellationToken);
 
         var response = new Response.CompleteMultipartUploadResponseDto
@@ -51,33 +43,9 @@ public sealed class CompleteMultipartUploadCommandHandler
             ETag = s3Response.ETag,
             Location = s3Response.Location,
             TotalParts = request.PartETags.Count,
-            DownloadUrl = downloadUrl,
             CompletedAt = DateTime.UtcNow
         };
 
-        _logger.LogInformation(
-            "Multipart upload completed successfully. UploadId: {UploadId}, ObjectName: {ObjectName}, ETag: {ETag}, TotalParts: {TotalParts}",
-            request.UploadId, request.ObjectName, s3Response.ETag, request.PartETags.Count);
-
         return Result<Response.CompleteMultipartUploadResponseDto>.Success(response);
-    }
-
-    /// <summary>
-    /// Logs detailed information about all uploaded parts
-    /// </summary>
-    private void LogPartDetails(string uploadId, List<Amazon.S3.Model.PartETag> partETags)
-    {
-        _logger.LogInformation(            "Part details for UploadId: {UploadId}. Total parts: {TotalParts}",            uploadId, partETags.Count);
-
-        var sortedParts = partETags.OrderBy(p => p.PartNumber).ToList();
-
-        foreach (var part in sortedParts)
-        {
-            _logger.LogDebug(
-                "Part {PartNumber}: ETag={ETag}",
-                part.PartNumber, part.ETag);
-        }
-
-        _logger.LogInformation(            "All parts validated. Ready to complete upload for UploadId: {UploadId}",            uploadId);
     }
 }

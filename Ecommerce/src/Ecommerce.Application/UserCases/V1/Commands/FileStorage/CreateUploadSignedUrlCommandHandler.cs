@@ -1,6 +1,7 @@
 ﻿using Ecommerce.Application.Abstractions;
 using Ecommerce.Contract.Abstractions.Message;
 using Ecommerce.Contract.Abstractions.Shared;
+using Ecommerce.Contract.Helper;
 using Ecommerce.Contract.Services.V1.FileStorage;
 using Microsoft.Extensions.Logging;
 
@@ -24,20 +25,20 @@ public sealed class CreateUploadSignedUrlCommandHandler
         Command.CreateUploadSignedUrlCommand request,
         CancellationToken cancellationToken)
     {
-        // Generate unique object name with proper structure
-        var objectName = _fileStorageService.GenerateObjectName(
-            request.AppServiceName,
-            request.FileName,
-            request.UploadingProgressId);
+        var folderName = Path.GetFileNameWithoutExtension(request.FileName);
+        var dateTime = DateTime.Now;
+
+        // Create object name to upload file to Cloud
+        string objectName = FileStorageFunctionHelper.CreateObjectName(dateTime, "AccountId", request.AppServiceName, folderName, request.FileName);
+        string fileType = FileStorageFunctionHelper.GetFileExtension(request.FileName);
 
         // Determine content type from file extension
-        var contentType = _fileStorageService.GetContentType(request.FileName);
+        var contentType = FileStorageFunctionHelper.GetUploadContentType(request.FileName);
 
         // Generate presigned URL for upload (expires in 60 minutes)
         var signedUrl = await _fileStorageService.GeneratePresignedUploadUrlAsync(
             objectName,
             contentType,
-            expiresInMinutes: 60,
             cancellationToken);
 
         var response = new Response.CreateUploadSignedUrlResponseDto

@@ -28,7 +28,6 @@ public sealed class AbortMultipartUploadCommandHandler
         Command.AbortMultipartUploadCommand request,
         CancellationToken cancellationToken)
     {
-
         _logger.LogInformation("Aborting multipart upload. UploadId: {UploadId}, ObjectName: {ObjectName}", request.UploadId, request.ObjectName);
 
         // Abort the multipart upload in S3
@@ -45,8 +44,6 @@ public sealed class AbortMultipartUploadCommandHandler
             Message = "Multipart upload aborted successfully. All uploaded parts have been removed.",
             AbortedAt = DateTime.UtcNow
         };
-
-        _logger.LogInformation("Multipart upload aborted successfully. UploadId: {UploadId}, ObjectName: {ObjectName}", request.UploadId, request.ObjectName);
 
         return Result<Response.AbortMultipartUploadResponseDto>.Success(response);
     }

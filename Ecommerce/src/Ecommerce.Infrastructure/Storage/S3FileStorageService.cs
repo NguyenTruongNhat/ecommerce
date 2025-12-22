@@ -2,6 +2,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Ecommerce.Application.Abstractions;
+using Ecommerce.Contract.Constants;
 using Ecommerce.Infrastructure.DependencyInjection.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -46,29 +47,20 @@ public sealed class S3FileStorageService : IFileStorageService
 
     public async Task<string> InitiateMultipartUploadAsync(
         string objectName,
-        string contentType,
         CancellationToken cancellationToken = default)
     {
-        ValidateObjectName(objectName);
-        ValidateContentType(contentType);
 
-        _logger.LogInformation(
-            "Initiating multipart upload. ObjectName: {ObjectName}, ContentType: {ContentType}",
-            objectName, contentType);
+        _logger.LogInformation("Initiating multipart upload. ObjectName: {ObjectName}", objectName);
 
         var request = new InitiateMultipartUploadRequest
         {
             BucketName = _options.BucketName,
             Key = objectName,
-            ContentType = contentType,
-            Metadata = { ["initiated-at"] = DateTime.UtcNow.ToString("O") }
         };
 
         var response = await _s3Client.InitiateMultipartUploadAsync(request, cancellationToken);
 
-        _logger.LogInformation(
-            "Multipart upload initiated successfully. UploadId: {UploadId}, ObjectName: {ObjectName}",
-            response.UploadId, objectName);
+        _logger.LogInformation("Multipart upload initiated successfully. UploadId: {UploadId}, ObjectName: {ObjectName}", response.UploadId, objectName);
 
         return response.UploadId;
     }
@@ -76,42 +68,21 @@ public sealed class S3FileStorageService : IFileStorageService
     public async Task<string> GeneratePresignedUrlForPartAsync(
         string objectName,
         string uploadId,
-        int partNumber,
-        int expiresInMinutes = 60,
-        CancellationToken cancellationToken = default)
+        int partNumber)
     {
-        ValidateObjectName(objectName);
-        if (string.IsNullOrWhiteSpace(uploadId))
-            throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
-        if (partNumber < 1 || partNumber > 10000)
-            throw new ArgumentException("Part number must be between 1 and 10000", nameof(partNumber));
-        if (expiresInMinutes <= 0 || expiresInMinutes > 10080)
-            throw new ArgumentException("Expiration time must be between 1 and 10080 minutes", nameof(expiresInMinutes));
-
-        _logger.LogInformation(
-            "Generating presigned URL for multipart upload part. ObjectName: {ObjectName}, UploadId: {UploadId}, PartNumber: {PartNumber}",
-            objectName, uploadId, partNumber);
-
         var request = new GetPreSignedUrlRequest
         {
             BucketName = _options.BucketName,
             Key = objectName,
             Verb = HttpVerb.PUT,
-            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
-            Protocol = Protocol.HTTPS,
+            Expires = DateTime.UtcNow.AddSeconds(FileStorageVariables.SignedURLLimitedTime),
             Parameters =
             {
                 ["uploadId"] = uploadId,
                 ["partNumber"] = partNumber.ToString()
             }
         };
-
         var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
-
-        _logger.LogInformation(
-            "Generated presigned URL for part {PartNumber}. Expires in: {Minutes} minutes",
-            partNumber, expiresInMinutes);
-
         return presignedUrl;
     }
 
@@ -207,29 +178,17 @@ public sealed class S3FileStorageService : IFileStorageService
     public async Task<string> GeneratePresignedUploadUrlAsync(
         string objectName,
         string contentType,
-        int expiresInMinutes = 60,
         CancellationToken cancellationToken = default)
     {
-                ValidateObjectName(objectName);
-        ValidateContentType(contentType);
-        if (expiresInMinutes <= 0 || expiresInMinutes > 10080)
-            throw new ArgumentException("Expiration time must be between 1 and 10080 minutes", nameof(expiresInMinutes));
-
         var request = new GetPreSignedUrlRequest
         {
             BucketName = _options.BucketName,
             Key = objectName,
             Verb = HttpVerb.PUT,
-            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
+            Expires = DateTime.UtcNow.AddSeconds(FileStorageVariables.SignedURLLimitedTime),
             ContentType = contentType
         };
-
         var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
-
-        _logger.LogInformation(
-            "Generated presigned upload URL for object: {ObjectName}, ContentType: {ContentType}, Expires in: {Minutes} minutes",
-            objectName, contentType, expiresInMinutes);
-
         return presignedUrl;
     }
 
@@ -265,15 +224,6 @@ public sealed class S3FileStorageService : IFileStorageService
         List<PartETag> partETags,
         CancellationToken cancellationToken = default)
     {
-        ValidateObjectName(objectName);
-        if (string.IsNullOrWhiteSpace(uploadId))
-            throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
-        if (partETags == null || partETags.Count == 0)
-            throw new ArgumentException("Part ETags list cannot be null or empty", nameof(partETags));
-
-        _logger.LogInformation(
-            "Completing multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}, TotalParts: {TotalParts}",
-            objectName, uploadId, partETags.Count);
 
         var sortedPartETags = partETags.OrderBy(p => p.PartNumber).ToList();
 
@@ -291,10 +241,6 @@ public sealed class S3FileStorageService : IFileStorageService
             throw new InvalidOperationException(
                 $"Failed to complete multipart upload. Status code: {response.HttpStatusCode}");
 
-        _logger.LogInformation(
-            "Multipart upload completed successfully. ObjectName: {ObjectName}, UploadId: {UploadId}, ETag: {ETag}, Location: {Location}",
-            objectName, uploadId, response.ETag, response.Location);
-
         return response;
     }
 
@@ -303,33 +249,18 @@ public sealed class S3FileStorageService : IFileStorageService
         string uploadId,
         CancellationToken cancellationToken = default)
     {
-        ValidateObjectName(objectName);
-        if (string.IsNullOrWhiteSpace(uploadId))
-            throw new ArgumentException("Upload ID cannot be null or empty", nameof(uploadId));
-
-        _logger.LogInformation(
-            "Aborting multipart upload. ObjectName: {ObjectName}, UploadId: {UploadId}",
-            objectName, uploadId);
-
         var request = new AbortMultipartUploadRequest
         {
             BucketName = _options.BucketName,
             Key = objectName,
             UploadId = uploadId
         };
-
         var response = await _s3Client.AbortMultipartUploadAsync(request, cancellationToken);
 
         if (response.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
         {
-            _logger.LogWarning(
-                "Multipart upload abort returned unexpected status code: {StatusCode}",
-                response.HttpStatusCode);
+            _logger.LogWarning("Multipart upload abort returned unexpected status code: {StatusCode}", response.HttpStatusCode);
         }
-
-        _logger.LogInformation(
-            "Multipart upload aborted successfully. ObjectName: {ObjectName}, UploadId: {UploadId}",
-            objectName, uploadId);
     }
 
     public string GenerateObjectName(string appServiceName, string fileName, string uploadingProgressId)

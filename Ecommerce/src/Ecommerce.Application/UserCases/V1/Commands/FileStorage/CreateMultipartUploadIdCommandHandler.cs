@@ -1,6 +1,8 @@
-﻿using Ecommerce.Application.Abstractions;
+﻿using System;
+using Ecommerce.Application.Abstractions;
 using Ecommerce.Contract.Abstractions.Message;
 using Ecommerce.Contract.Abstractions.Shared;
+using Ecommerce.Contract.Helper;
 using Ecommerce.Contract.Services.V1.FileStorage;
 using Microsoft.Extensions.Logging;
 
@@ -28,33 +30,22 @@ public sealed class CreateMultipartUploadIdCommandHandler
         Command.CreateMultipartUploadCommand request,
         CancellationToken cancellationToken)
     {
-        // Generate unique object name
-        var objectName = _fileStorageService.GenerateObjectName(
-            request.AppServiceName,
-            request.FileName,
-            request.UploadingProgressId);
+        var folderName = Path.GetFileNameWithoutExtension(request.FileName);
+        var dateTime = DateTime.Now;
 
-        // Determine content type from file extension
-        var contentType = _fileStorageService.GetContentType(request.FileName);
-        var fileType = Path.GetExtension(request.FileName);
-
+        // Create object name to upload file to Cloud
+        string objectName = FileStorageFunctionHelper.CreateObjectName(dateTime, "AccountId", request.AppServiceName, folderName, request.FileName);
+        string fileType = FileStorageFunctionHelper.GetFileExtension(request.FileName);
 
         // Initiate multipart upload in S3
-        var uploadId = await _fileStorageService.InitiateMultipartUploadAsync(
-            objectName,
-            contentType,
-            cancellationToken);
+        var uploadId = await _fileStorageService.InitiateMultipartUploadAsync(objectName);
 
         var response = new Response.InitiateMultipartUploadResponseDto
         {
             UploadId = uploadId,
             ObjectName = objectName,
-            FileName = request.FileName,
-            ContentType = contentType,
             FileType = fileType,
-            InitiatedAt = DateTime.UtcNow
         };
-                _logger.LogInformation(            "Multipart upload initiated successfully. UploadId: {UploadId}, ObjectName: {ObjectName}",            uploadId, objectName);
 
         return Result<Response.InitiateMultipartUploadResponseDto>.Success(response);
     }
