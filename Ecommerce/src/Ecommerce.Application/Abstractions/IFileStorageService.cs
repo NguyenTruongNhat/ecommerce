@@ -122,6 +122,8 @@ public interface IFileStorageService
         int expiresInMinutes = 60,
         CancellationToken cancellationToken = default);
 
+    Task<string> GeneratePresignedDownloadUrlAsync(string objectName, string fileName);
+
     /// <summary>
     /// Generates a unique object name with proper path structure
     /// </summary>
@@ -137,4 +139,6 @@ public interface IFileStorageService
     /// <param name="fileName">File name with extension</param>
     /// <returns>MIME content type</returns>
     string GetContentType(string fileName);
+
+
 }

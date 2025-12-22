@@ -206,8 +206,9 @@ public sealed class S3FileStorageService : IFileStorageService
             BucketName = _options.BucketName,
             Key = objectName,
             Verb = HttpVerb.GET,
-            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes)
+            Expires = DateTime.UtcNow.AddSeconds(FileStorageVariables.SignedURLLimitedTime)
         };
+
 
         var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
 
@@ -215,6 +216,29 @@ public sealed class S3FileStorageService : IFileStorageService
             "Generated presigned download URL for object: {ObjectName}, Expires in: {Minutes} minutes",
             objectName, expiresInMinutes);
 
+        return presignedUrl;
+    }
+
+    public async Task<string> GeneratePresignedDownloadUrlAsync(string objectName, string fileName)
+    {
+
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _options.BucketName,
+            Key = objectName,
+            Verb = HttpVerb.GET,
+            Expires = DateTime.UtcNow.AddSeconds(FileStorageVariables.SignedURLLimitedTime)
+        };
+        if (!string.IsNullOrEmpty(fileName))
+        {
+            request.ResponseHeaderOverrides = new ResponseHeaderOverrides
+            {
+                ContentDisposition = $"attachment; filename=\"{fileName}\"",
+                ContentType = "application/octet-stream"
+            };
+        }
+
+        var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
         return presignedUrl;
     }
 

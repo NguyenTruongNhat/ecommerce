@@ -27,9 +27,7 @@ public sealed class PreSignedUrlCommandHandler
     {
         // Generate presigned URL for download (expires in 60 minutes by default)
         var signedUrl = await _fileStorageService.GeneratePresignedDownloadUrlAsync(
-            request.ObjectName,
-            expiresInMinutes: DefaultExpirationMinutes,
-            cancellationToken);
+            request.ObjectName, request.FileName);
 
         var expiresAt = DateTime.UtcNow.AddMinutes(DefaultExpirationMinutes);
 
