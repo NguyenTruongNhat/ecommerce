@@ -96,10 +96,6 @@ public sealed class S3FileStorageService : IFileStorageService
         ValidateObjectName(objectName);
         ValidateContentType(contentType);
 
-        _logger.LogInformation(
-            "Starting direct upload to S3. ObjectName: {ObjectName}, FileName: {FileName}, FileSize: {FileSize} bytes",
-            objectName, file.FileName, file.Length);
-
         using var stream = file.OpenReadStream();
         var putRequest = new PutObjectRequest
         {
@@ -118,14 +114,11 @@ public sealed class S3FileStorageService : IFileStorageService
         var response = await _s3Client.PutObjectAsync(putRequest, cancellationToken);
 
         if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
-            throw new InvalidOperationException(
-                $"Failed to upload file to S3. Status code: {response.HttpStatusCode}");
+            throw new InvalidOperationException($"Failed to upload file to S3. Status code: {response.HttpStatusCode}");
 
-        _logger.LogInformation(
-            "Successfully uploaded file to S3. ObjectName: {ObjectName}, ETag: {ETag}",
-            objectName, response.ETag);
+        _logger.LogInformation("Successfully uploaded file to S3. ObjectName: {ObjectName}, ETag: {ETag}", objectName, response.ETag);
 
-        return $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{objectName}";
+        return objectName;
     }
 
     public async Task<string> UploadFileWithProgressAsync(
@@ -365,4 +358,22 @@ public sealed class S3FileStorageService : IFileStorageService
 
         return sanitized;
     }
+
+    public async Task<MemoryStream> DownloadFileCloudAsync(string objectName)
+    {
+        using (MemoryStream streamFile = new MemoryStream())
+        {
+            GetObjectResponse response = await _s3Client.GetObjectAsync(_options.BucketName, objectName);
+            using (var responseStream = response.ResponseStream)
+            {
+                responseStream.CopyTo(streamFile);
+            }
+
+            streamFile.Position = 0;
+
+            return streamFile;
+        }
+        ;
+    }
+
 }

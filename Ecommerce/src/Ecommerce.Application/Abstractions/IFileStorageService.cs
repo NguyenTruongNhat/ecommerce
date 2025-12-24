@@ -139,6 +139,7 @@ public interface IFileStorageService
     /// <param name="fileName">File name with extension</param>
     /// <returns>MIME content type</returns>
     string GetContentType(string fileName);
+    Task<MemoryStream> DownloadFileCloudAsync(string objectName);
 
 
 }
