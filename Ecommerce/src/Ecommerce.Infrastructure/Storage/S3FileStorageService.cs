@@ -178,8 +178,9 @@ public sealed class S3FileStorageService : IFileStorageService
             BucketName = _options.BucketName,
             Key = objectName,
             Verb = HttpVerb.PUT,
-            Expires = DateTime.UtcNow.AddSeconds(FileStorageVariables.SignedURLLimitedTime),
-            ContentType = contentType
+            Expires = DateTime.UtcNow.AddSeconds(FileStorageVariables.SignedURLLimitedTime)
+            //,
+            //ContentType = contentType
         };
         var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
         return presignedUrl;
@@ -222,14 +223,14 @@ public sealed class S3FileStorageService : IFileStorageService
             Verb = HttpVerb.GET,
             Expires = DateTime.UtcNow.AddSeconds(FileStorageVariables.SignedURLLimitedTime)
         };
-        if (!string.IsNullOrEmpty(fileName))
-        {
-            request.ResponseHeaderOverrides = new ResponseHeaderOverrides
-            {
-                ContentDisposition = $"attachment; filename=\"{fileName}\"",
-                ContentType = "application/octet-stream"
-            };
-        }
+        //if (!string.IsNullOrEmpty(fileName))
+        //{
+        //    request.ResponseHeaderOverrides = new ResponseHeaderOverrides
+        //    {
+        //        ContentDisposition = $"attachment; filename=\"{fileName}\"",
+        //        ContentType = "application/octet-stream"
+        //    };
+        //}
 
         var presignedUrl = await _s3Client.GetPreSignedURLAsync(request);
         return presignedUrl;
