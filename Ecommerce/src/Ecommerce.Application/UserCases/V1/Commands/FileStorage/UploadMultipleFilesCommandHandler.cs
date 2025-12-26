@@ -9,8 +9,8 @@ using Microsoft.Extensions.Logging;
 namespace Ecommerce.Application.UserCases.V1.Commands.FileStorage;
 
 /// <summary>
-/// Handler for uploading multiple files to S3 with real-time progress tracking
-/// Uses AWS TransferUtility for efficient uploads and SignalR for progress broadcasting
+/// Handler for uploading multiple files to S3 with console progress logging
+/// Uses AWS TransferUtility for efficient uploads
 /// </summary>
 public sealed class UploadMultipleFilesCommandHandler
     : ICommandHandler<Command.UploadMultipleFilesCommand, Response.UploadMultipleFilesResponseDto>
@@ -39,68 +39,105 @@ public sealed class UploadMultipleFilesCommandHandler
         var stopwatch = Stopwatch.StartNew();
         var startedAt = DateTime.UtcNow;
 
-        // Thread-safe collection for upload results
-        var results = new ConcurrentBag<Response.FileUploadResultDto>();
-        var semaphore = new SemaphoreSlim(MaxConcurrentUploads, MaxConcurrentUploads);
-
-        // Create upload tasks for all files
-        var uploadTasks = request.Files.Select(async (file, index) =>
+        try
         {
-            await semaphore.WaitAsync(cancellationToken);
-            try
+            _logger.LogInformation(
+                "Starting multiple file upload. UploadingProgressId: {ProgressId}, AppServiceName: {AppServiceName}, FilesCount: {Count}",
+                request.UploadingProgressId, request.AppServiceName, request.Files?.Count ?? 0);
+
+            Console.WriteLine($"\n╔══════════════════════════════════════════════════════════════╗");
+            Console.WriteLine($"║  Multiple File Upload Started                                ║");
+            Console.WriteLine($"╠══════════════════════════════════════════════════════════════╣");
+            Console.WriteLine($"║  Session ID: {request.UploadingProgressId,-42} ║");
+            Console.WriteLine($"║  Service: {request.AppServiceName,-49} ║");
+            Console.WriteLine($"║  Files: {request.Files?.Count ?? 0,-53} ║");
+            Console.WriteLine($"╚══════════════════════════════════════════════════════════════╝\n");
+
+
+            // Thread-safe collection for upload results
+            var results = new ConcurrentBag<Response.FileUploadResultDto>();
+            var semaphore = new SemaphoreSlim(MaxConcurrentUploads, MaxConcurrentUploads);
+
+            // Create upload tasks for all files
+            var uploadTasks = request.Files.Select(async (file, index) =>
             {
-                var result = await UploadSingleFileAsync(
-                    file,
-                    request.AppServiceName,
-                    request.UploadingProgressId,
-                    index,
-                    request.Files.Count,
-                    cancellationToken);
+                await semaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var result = await UploadSingleFileAsync(
+                        file,
+                        request.AppServiceName,
+                        request.UploadingProgressId,
+                        index,
+                        request.Files.Count,
+                        cancellationToken);
 
-                results.Add(result);
-            }
-            finally
+                    results.Add(result);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            // Wait for all uploads to complete
+            await Task.WhenAll(uploadTasks);
+
+            stopwatch.Stop();
+            var completedAt = DateTime.UtcNow;
+
+            // Calculate statistics
+            var resultsList = results.ToList();
+            var successCount = resultsList.Count(r => r.IsSuccess);
+            var failedCount = resultsList.Count(r => !r.IsSuccess);
+
+            // Log completion
+            _uploadProgressService.LogCompletion(
+                request.UploadingProgressId,
+                successCount,
+                failedCount);
+
+            Console.WriteLine($"\n╔══════════════════════════════════════════════════════════════╗");
+            Console.WriteLine($"║  Upload Session Completed                                    ║");
+            Console.WriteLine($"╠══════════════════════════════════════════════════════════════╣");
+            Console.WriteLine($"║  Total Files: {request.Files.Count,-47} ║");
+            Console.WriteLine($"║  Successful: {successCount,-48} ║");
+            Console.WriteLine($"║  Failed: {failedCount,-52} ║");
+            Console.WriteLine($"║  Duration: {stopwatch.Elapsed.TotalSeconds:F2}s{new string(' ', 47)} ║");
+            Console.WriteLine($"╚══════════════════════════════════════════════════════════════╝\n");
+
+            var response = new Response.UploadMultipleFilesResponseDto
             {
-                semaphore.Release();
-            }
-        });
+                UploadingProgressId = request.UploadingProgressId,
+                TotalFiles = request.Files.Count,
+                SuccessfulUploads = successCount,
+                FailedUploads = failedCount,
+                Results = resultsList.OrderBy(r => r.FileName).ToList(),
+                StartedAt = startedAt,
+                CompletedAt = completedAt,
+                TotalDurationSeconds = stopwatch.Elapsed.TotalSeconds
+            };
 
-        // Wait for all uploads to complete
-        await Task.WhenAll(uploadTasks);
+            _logger.LogInformation(
+                "Multiple file upload completed. UploadingProgressId: {ProgressId}, Success: {Success}, Failed: {Failed}, Duration: {Duration}s",
+                request.UploadingProgressId, successCount, failedCount, response.TotalDurationSeconds);
 
-        stopwatch.Stop();
-        var completedAt = DateTime.UtcNow;
-
-        // Calculate statistics
-        var resultsList = results.ToList();
-        var successCount = resultsList.Count(r => r.IsSuccess);
-        var failedCount = resultsList.Count(r => !r.IsSuccess);
-
-        // Report completion via SignalR
-        await _uploadProgressService.ReportCompletionAsync(
-            request.UploadingProgressId,
-            successCount,
-            failedCount,
-            cancellationToken);
-
-        var response = new Response.UploadMultipleFilesResponseDto
+            return Result<Response.UploadMultipleFilesResponseDto>.Success(response);
+        }
+        catch (Exception ex)
         {
-            UploadingProgressId = request.UploadingProgressId,
-            TotalFiles = request.Files.Count,
-            SuccessfulUploads = successCount,
-            FailedUploads = failedCount,
-            Results = resultsList.OrderBy(r => r.FileName).ToList(),
-            StartedAt = startedAt,
-            CompletedAt = completedAt,
-            TotalDurationSeconds = stopwatch.Elapsed.TotalSeconds
-        };
+            stopwatch.Stop();
+            _logger.LogError(ex,
+                "Fatal error during multiple file upload. UploadingProgressId: {ProgressId}",
+                request.UploadingProgressId);
 
-        _logger.LogInformation(
-            "Multiple file upload completed. UploadingProgressId: {ProgressId}, Success: {Success}, Failed: {Failed}, Duration: {Duration}s",
-            request.UploadingProgressId, successCount, failedCount, response.TotalDurationSeconds);
+            Console.WriteLine($"\n❌ FATAL ERROR: {ex.Message}\n");
 
-        // Return success even if some files failed (partial success)
-        return Result<Response.UploadMultipleFilesResponseDto>.Success(response);
+            return (Result<Response.UploadMultipleFilesResponseDto>)Result<Response.UploadMultipleFilesResponseDto>.Failure(
+                new Error(
+                    "FileStorage.UploadMultipleFailed",
+                    $"Failed to upload files: {ex.Message}"));
+        }
     }
 
     /// <summary>
@@ -120,92 +157,79 @@ public sealed class UploadMultipleFilesCommandHandler
             FileSize = file.Length
         };
 
-        // Upload logic
-        var objectName = _fileStorageService.GenerateObjectName(
-            appServiceName,
-            file.FileName,
-            uploadingProgressId);
+        try
+        {
+            _logger.LogInformation("Uploading file {Index}/{Total}: {FileName} ({Size} bytes)", fileIndex + 1, totalFiles, file.FileName, file.Length);
 
-        result.ObjectName = objectName;
+            // Generate object name
+            var objectName = _fileStorageService.GenerateObjectName(
+                appServiceName,
+                file.FileName,
+                uploadingProgressId);
 
-        var contentType = _fileStorageService.GetContentType(file.FileName);
-        result.ContentType = contentType;
+            result.ObjectName = objectName;
 
-        var objectUrl = await _fileStorageService.UploadFileWithProgressAsync(
-            file,
-            objectName,
-            contentType,
-            (transferred, total) =>
-            {
-                // Report progress via SignalR (non-blocking)
-                _ = ReportProgressAsync(
-                    uploadingProgressId,
-                    file.FileName,
-                    fileIndex,
-                    totalFiles,
-                    transferred,
-                    total,
-                    "uploading",
-                    cancellationToken);
-            },
-            cancellationToken);
+            // Determine content type
+            var contentType = _fileStorageService.GetContentType(file.FileName);
+            result.ContentType = contentType;
 
-        result.DownloadUrl = await _fileStorageService.GeneratePresignedDownloadUrlAsync(
-            objectName,
-            expiresInMinutes: 10080, // 7 days
-            cancellationToken);
+            Console.WriteLine($"📤 Uploading {fileIndex + 1}/{totalFiles}: {file.FileName} ({file.Length:N0} bytes)");
 
-        result.IsSuccess = true;
+            // Upload with progress tracking
+            var objectUrl = await _fileStorageService.UploadFileWithProgressAsync(
+                file,
+                objectName,
+                contentType,
+                (transferred, total) =>
+                {
+                    // Log progress to console
+                    _uploadProgressService.LogProgress(
+                        uploadingProgressId,
+                        file.FileName,
+                        fileIndex,
+                        totalFiles,
+                        transferred,
+                        total,
+                        "uploading");
+                },
+                cancellationToken);
 
-        // Report completion for this file
-        await ReportProgressAsync(
-            uploadingProgressId, file.FileName, fileIndex, totalFiles,
-            file.Length, file.Length, "completed", cancellationToken);
+            // Generate download URL
+            result.DownloadUrl = await _fileStorageService.GeneratePresignedDownloadUrlAsync(
+                objectName,
+                expiresInMinutes: 10080, // 7 days
+                cancellationToken);
 
-        _logger.LogInformation(
-            "Successfully uploaded file {Index}/{Total}: {FileName} -> {ObjectName}",
-            fileIndex + 1, totalFiles, file.FileName, objectName);
+            result.IsSuccess = true;
+
+            // Log completion
+            _uploadProgressService.LogProgress(
+                uploadingProgressId, file.FileName, fileIndex, totalFiles,
+                file.Length, file.Length, "completed");
+
+            Console.WriteLine($"✅ File {fileIndex + 1}/{totalFiles}: {file.FileName} - COMPLETED");
+
+            _logger.LogInformation(
+                "Successfully uploaded file {Index}/{Total}: {FileName} -> {ObjectName}",
+                fileIndex + 1, totalFiles, file.FileName, objectName);
+        }
+        catch (Exception ex)
+        {
+            result.IsSuccess = false;
+            result.ErrorMessage = ex.Message;
+
+            _logger.LogError(ex,
+                "Failed to upload file {Index}/{Total}: {FileName}",
+                fileIndex + 1, totalFiles, file.FileName);
+
+            _uploadProgressService.LogProgress(
+                uploadingProgressId, file.FileName, fileIndex, totalFiles,
+                0, file.Length, "failed");
+
+            Console.WriteLine($"❌ File {fileIndex + 1}/{totalFiles}: {file.FileName} - FAILED: {ex.Message}");
+        }
 
         return result;
     }
 
-    /// <summary>
-    /// Reports upload progress to connected clients via SignalR
-    /// </summary>
-    private async Task ReportProgressAsync(
-        string uploadingProgressId,
-        string fileName,
-        int fileIndex,
-        int totalFiles,
-        long transferredBytes,
-        long totalBytes,
-        string status,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var percentComplete = totalBytes > 0
-                ? Math.Round((double)transferredBytes / totalBytes * 100, 2)
-                : 0;
-
-            var progress = new Response.UploadProgressDto
-            {
-                UploadingProgressId = uploadingProgressId,
-                FileName = fileName,
-                FileIndex = fileIndex,
-                TotalFiles = totalFiles,
-                TransferredBytes = transferredBytes,
-                TotalBytes = totalBytes,
-                PercentComplete = percentComplete,
-                Status = status
-            };
-
-            await _uploadProgressService.ReportProgressAsync(progress, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            // Don't fail the upload if progress reporting fails
-            _logger.LogWarning(ex, "Failed to report progress for file: {FileName}", fileName);
-        }
-    }
 }

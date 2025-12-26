@@ -12,9 +12,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Ecommerce.Infrastructure.DependencyInjection.Extensions;
+
 public static class ServiceCollectionExtensions
 {
     public static void AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
@@ -22,12 +22,11 @@ public static class ServiceCollectionExtensions
         services.AddServicesInfrastructure(configuration);
         services.AddRedisInfrastructure(configuration);
         services.AddS3Infrastructure(configuration);
-        services.AddSignalRInfrastructure();
+        // REMOVED: services.AddSignalRInfrastructure();
     }
 
     public static void AddServicesInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        //services.Configure<GoogleAuthOptions>(configuration.GetSection("GoogleAuth"));
         services
             .AddOptions<GoogleAuthOptions>()
             .Bind(configuration.GetSection("GoogleAuth"))
@@ -37,7 +36,7 @@ public static class ServiceCollectionExtensions
                .AddTransient<IJwtTokenService, JwtTokenService>()
                .AddTransient<IAuthenticationService, AuthenticationService>()
                .AddTransient<IGoogleAuthenService, GoogleAuthenService>()
-        ;
+               .AddScoped<IUploadProgressService, UploadProgressService>(); // Console-based logging
     }
 
     public static void AddRedisInfrastructure(this IServiceCollection services, IConfiguration configuration)
@@ -67,7 +66,6 @@ public static class ServiceCollectionExtensions
             };
             var client = new AmazonS3Client(options.AccessKey, options.SecretKey, config);
 
-            // Try a simple ListBuckets call to verify connection and log result
             try
             {
                 var buckets = client.ListBucketsAsync().GetAwaiter().GetResult();
@@ -88,9 +86,5 @@ public static class ServiceCollectionExtensions
         #endregion
     }
 
-    public static void AddSignalRInfrastructure(this IServiceCollection services)
-    {
-        services.AddSignalR();
-        services.AddScoped<IUploadProgressService, UploadProgressService>();
-    }
+    // REMOVED: AddSignalRInfrastructure method
 }

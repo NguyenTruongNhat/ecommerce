@@ -1,76 +1,52 @@
 using Ecommerce.Application.Abstractions;
-using Ecommerce.Contract.Services.V1.FileStorage;
-using Ecommerce.Infrastructure.Hubs;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
 namespace Ecommerce.Infrastructure.RealTime;
 
 /// <summary>
-/// SignalR-based implementation of upload progress reporting
+/// Console-based implementation of upload progress logging
 /// </summary>
 public sealed class UploadProgressService : IUploadProgressService
 {
-    private readonly IHubContext<UploadProgressHub> _hubContext;
     private readonly ILogger<UploadProgressService> _logger;
 
-    public UploadProgressService(
-        IHubContext<UploadProgressHub> hubContext,
-        ILogger<UploadProgressService> logger)
+    public UploadProgressService(ILogger<UploadProgressService> logger)
     {
-        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task ReportProgressAsync(
-        Response.UploadProgressDto progress,
-        CancellationToken cancellationToken = default)
+    public void LogProgress(
+        string uploadingProgressId,
+        string fileName,
+        int fileIndex,
+        int totalFiles,
+        long transferredBytes,
+        long totalBytes,
+        string status)
     {
-        try
-        {
-            await _hubContext.Clients
-                .Group(progress.UploadingProgressId)
-                .SendAsync("UploadProgress", progress, cancellationToken);
+        var percentComplete = totalBytes > 0
+            ? Math.Round((double)transferredBytes / totalBytes * 100, 2)
+            : 0;
 
-            _logger.LogDebug(
-                "Progress reported for {UploadingProgressId}: {FileName} - {Percent}%",
-                progress.UploadingProgressId, progress.FileName, progress.PercentComplete);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to report progress for {UploadingProgressId}",
-                progress.UploadingProgressId);
-        }
+        _logger.LogInformation(
+            "[Upload Progress] Session: {UploadingProgressId} | File: {FileName} ({FileIndex}/{TotalFiles}) | Progress: {PercentComplete}% ({TransferredBytes}/{TotalBytes} bytes) | Status: {Status}",
+            uploadingProgressId, fileName, fileIndex + 1, totalFiles, percentComplete, transferredBytes, totalBytes, status);
+
+        // Also log to console for immediate visibility
+        Console.WriteLine(
+            $"[{DateTime.Now:HH:mm:ss}] Upload Progress: {fileName} ({fileIndex + 1}/{totalFiles}) - {percentComplete}% - {status}");
     }
 
-    public async Task ReportCompletionAsync(
+    public void LogCompletion(
         string uploadingProgressId,
         int successCount,
-        int failedCount,
-        CancellationToken cancellationToken = default)
+        int failedCount)
     {
-        try
-        {
-            await _hubContext.Clients
-                .Group(uploadingProgressId)
-                .SendAsync("UploadCompleted", new
-                {
-                    UploadingProgressId = uploadingProgressId,
-                    SuccessCount = successCount,
-                    FailedCount = failedCount,
-                    CompletedAt = DateTime.UtcNow
-                }, cancellationToken);
+        _logger.LogInformation(
+            "[Upload Completed] Session: {UploadingProgressId} | Success: {SuccessCount} | Failed: {FailedCount}",
+            uploadingProgressId, successCount, failedCount);
 
-            _logger.LogInformation(
-                "Upload completion reported for {UploadingProgressId}: {Success} succeeded, {Failed} failed",
-                uploadingProgressId, successCount, failedCount);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to report completion for {UploadingProgressId}",
-                uploadingProgressId);
-        }
+        Console.WriteLine(
+            $"[{DateTime.Now:HH:mm:ss}] Upload Session Completed: {successCount} succeeded, {failedCount} failed");
     }
 }

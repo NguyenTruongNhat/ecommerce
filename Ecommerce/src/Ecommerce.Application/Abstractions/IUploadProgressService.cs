@@ -3,17 +3,17 @@ using Ecommerce.Contract.Services.V1.FileStorage;
 namespace Ecommerce.Application.Abstractions;
 
 /// <summary>
-/// Service for broadcasting upload progress to clients
+/// Service for logging upload progress to console
 /// </summary>
 public interface IUploadProgressService
 {
     /// <summary>
-    /// Reports upload progress for a specific file
+    /// Logs upload progress to console
     /// </summary>
-    Task ReportProgressAsync(Response.UploadProgressDto progress, CancellationToken cancellationToken = default);
+    void LogProgress(string uploadingProgressId, string fileName, int fileIndex, int totalFiles, long transferredBytes, long totalBytes, string status);
 
     /// <summary>
-    /// Reports completion of an upload session
+    /// Logs completion of an upload session
     /// </summary>
-    Task ReportCompletionAsync(string uploadingProgressId, int successCount, int failedCount, CancellationToken cancellationToken = default);
+    void LogCompletion(string uploadingProgressId, int successCount, int failedCount);
 }
